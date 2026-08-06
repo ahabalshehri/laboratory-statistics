@@ -213,6 +213,29 @@ def _data_table_grouped_first_col(headers, rows, col_widths=None):
     return table
 
 
+def _totals_table(headers, rows, col_widths=None):
+    """Compact summary table with its last row (Grand Total) bolded and highlighted."""
+    table_data = [headers] + rows
+    table = Table(table_data, colWidths=col_widths)
+    last = len(table_data) - 1
+    style = [
+        ("BACKGROUND", (0, 0), (-1, 0), NAVY),
+        ("TEXTCOLOR", (0, 0), (-1, 0), colors.white),
+        ("FONTNAME", (0, 0), (-1, 0), "Helvetica-Bold"),
+        ("FONTSIZE", (0, 0), (-1, -1), 8.5),
+        ("GRID", (0, 0), (-1, -1), 0.5, GRID_GRAY),
+        ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
+        ("TOPPADDING", (0, 0), (-1, -1), 5),
+        ("BOTTOMPADDING", (0, 0), (-1, -1), 5),
+        ("ROWBACKGROUNDS", (0, 1), (-1, last - 1), [colors.white, LIGHT_BLUE]),
+        ("BACKGROUND", (0, last), (-1, last), BLUE),
+        ("TEXTCOLOR", (0, last), (-1, last), colors.white),
+        ("FONTNAME", (0, last), (-1, last), "Helvetica-Bold"),
+    ]
+    table.setStyle(TableStyle(style))
+    return table
+
+
 def _signature_block(styles):
     def blank_col(title):
         return [
@@ -366,7 +389,27 @@ def build_executive_pdf(
                 styles["Small"],
             )
         )
-        story.append(Spacer(1, 8))
+        story.append(Spacer(1, 10))
+
+        division_totals: dict[str, int] = {}
+        for division, _abbreviation, count in abbreviation_table_rows:
+            division_totals[division] = division_totals.get(division, 0) + count
+        totals_rows = [[division, total] for division, total in division_totals.items()]
+        totals_rows.append(["GRAND TOTAL", sum(division_totals.values())])
+
+        story.append(Paragraph("Division Totals", styles["Body"]))
+        story.append(Spacer(1, 4))
+        story.append(
+            _totals_table(
+                ["Division", "Analytical Test Count"],
+                totals_rows,
+                col_widths=[7.0 * cm, 5.0 * cm],
+            )
+        )
+        story.append(Spacer(1, 16))
+
+        story.append(Paragraph("Detail by Abbreviation", styles["Body"]))
+        story.append(Spacer(1, 4))
         story.append(
             _data_table_grouped_first_col(
                 ["Division", "Abbreviation", "Analytical Test Count"],
