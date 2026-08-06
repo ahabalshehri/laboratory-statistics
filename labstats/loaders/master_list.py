@@ -52,7 +52,7 @@ def _standardize_division(raw_division: str) -> str:
 
 
 def load_master_list(path: str) -> MasterListResult:
-    raw = pd.read_excel(path, header=None, dtype=object)
+    raw = pd.read_excel(path, header=None, dtype=object, engine="calamine")
     header_row = _find_header_row(raw)
 
     header_cells = [clean_display(v) for v in raw.iloc[header_row].tolist()]
