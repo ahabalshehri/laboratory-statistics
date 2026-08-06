@@ -49,25 +49,36 @@ def main():
         "Aggregated statistics only - no individual patient names or identifiers are shown in any report."
     )
 
+    bundled_master = Path("reference_data/laboratory_test_master_list.xlsx")
+
     with st.sidebar:
-        st.header("1. Data Sources")
-        master_upload = st.file_uploader("Laboratory Test Master List (.xlsx)", type=["xlsx"])
-        activity_upload = st.file_uploader("Laboratory Activity File / HIS export (.xlsx)", type=["xlsx"])
+        st.header("1. Laboratory Test Master List")
+        if bundled_master.exists():
+            st.success("Using the bundled master list.")
+            with st.expander("Replace the Master List (optional)"):
+                master_upload = st.file_uploader(
+                    "Upload an updated Master List (.xlsx)", type=["xlsx"], key="master_upload"
+                )
+        else:
+            st.warning("No bundled master list found - please upload one.")
+            master_upload = st.file_uploader("Laboratory Test Master List (.xlsx)", type=["xlsx"], key="master_upload")
+
+        st.header("2. Laboratory Activity File")
+        activity_upload = st.file_uploader("Upload the HIS export (.xlsx)", type=["xlsx"])
 
         use_local_sample = False
-        local_master = Path("data/raw/master_test_list.xlsx")
         local_activity = Path("data/raw/sample_activity_export.xlsx")
-        if not master_upload and not activity_upload and local_master.exists() and local_activity.exists():
-            use_local_sample = st.checkbox("Use local sample files in data/raw/", value=True)
+        if not activity_upload and local_activity.exists():
+            use_local_sample = st.checkbox("Use local sample file in data/raw/", value=True)
 
     if master_upload:
         master_path = _save_upload(master_upload)
         master_key = master_upload.name + str(master_upload.size)
-    elif use_local_sample:
-        master_path = str(local_master)
-        master_key = "local_master"
+    elif bundled_master.exists():
+        master_path = str(bundled_master)
+        master_key = "bundled_master"
     else:
-        st.info("Upload the Laboratory Test Master List and the Laboratory Activity File to begin.")
+        st.info("Upload the Laboratory Test Master List to begin.")
         return
 
     if activity_upload:

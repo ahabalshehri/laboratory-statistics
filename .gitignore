@@ -13,6 +13,8 @@ data/generated/*
 *.xls
 *.csv
 !data/sample_synthetic/*.csv
+# The bundled Test Master List has no patient data - safe to commit and ship with the app.
+!reference_data/*.xlsx
 
 output/
 reports_out/
