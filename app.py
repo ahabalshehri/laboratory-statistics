@@ -10,6 +10,7 @@ import plotly.express as px
 import streamlit as st
 
 from labstats.export.excel_export import build_workbook
+from labstats.export.pdf_export import build_executive_pdf
 from labstats.loaders.activity_file import load_activity_file
 from labstats.loaders.master_list import load_master_list
 from labstats.mapping.patient_type import classify_patient_types
@@ -279,6 +280,34 @@ def main():
             data=workbook_bytes,
             file_name="laboratory_statistics_report.xlsx",
             mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        )
+
+        st.divider()
+        logo_path = Path("reference_data/logo.png")
+        period_label = (
+            f"{start_date} to {end_date}" if start_date is not None else "All available dates"
+        )
+        div_rows = division_result.table[
+            ["division", "unique_patients", "requests", "package_line_items", "individual_test_line_items", "analytical_tests", "pct_of_total_workload"]
+        ].values.tolist()
+        rec_rows = reception_table[
+            ["patient_category", "unique_patients", "requests", "analytical_tests", "pct_of_total_patients", "pct_of_total_workload"]
+        ].values.tolist()
+        pdf_bytes = build_executive_pdf(
+            hospital_name=activity_result.metadata.get("hospital_name") or "Laboratory",
+            period_label=period_label,
+            date_basis=executive.methodology["date_basis"],
+            indicators=executive.indicators,
+            division_table_rows=div_rows,
+            reception_table_rows=rec_rows,
+            methodology=executive.methodology,
+            logo_path=str(logo_path) if logo_path.exists() else None,
+        )
+        st.download_button(
+            "Download Official PDF Report (signable, print-ready)",
+            data=pdf_bytes,
+            file_name="official_laboratory_statistics_report.pdf",
+            mime="application/pdf",
         )
 
 

@@ -3,5 +3,6 @@ openpyxl==3.1.5
 streamlit==1.61.1
 xlsxwriter==3.2.9
 reportlab==5.0.0
+Pillow==12.3.0
 plotly==6.9.0
 pytest==9.1.1
