@@ -1,0 +1,21 @@
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+
+# Raw and generated data files contain patient-identifiable information (PHI).
+# Never commit these — keep them local only.
+data/raw/*
+!data/raw/.gitkeep
+data/generated/*
+!data/generated/.gitkeep
+*.xlsx
+*.xls
+*.csv
+!data/sample_synthetic/*.csv
+
+output/
+reports_out/
+*.pdf
+
+.streamlit/secrets.toml
