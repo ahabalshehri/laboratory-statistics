@@ -293,6 +293,9 @@ def main():
         rec_rows = reception_table[
             ["patient_category", "unique_patients", "requests", "analytical_tests", "pct_of_total_patients", "pct_of_total_workload"]
         ].values.tolist()
+        abbrev_rows = abbreviation_table[
+            ["abbreviation", "standard_report_name", "division", "patient_count", "request_count", "analytical_test_count"]
+        ].values.tolist()
         pdf_bytes = build_executive_pdf(
             hospital_name=activity_result.metadata.get("hospital_name") or "Laboratory",
             period_label=period_label,
@@ -301,6 +304,7 @@ def main():
             division_table_rows=div_rows,
             reception_table_rows=rec_rows,
             methodology=executive.methodology,
+            abbreviation_table_rows=abbrev_rows,
             logo_path=str(logo_path) if logo_path.exists() else None,
         )
         st.download_button(

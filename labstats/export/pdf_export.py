@@ -10,7 +10,7 @@ import io
 from datetime import datetime
 
 from reportlab.lib import colors
-from reportlab.lib.pagesizes import A4
+from reportlab.lib.pagesizes import A4, landscape
 from reportlab.lib.units import cm
 from reportlab.lib.styles import ParagraphStyle, getSampleStyleSheet
 from reportlab.lib.enums import TA_CENTER
@@ -21,6 +21,7 @@ from reportlab.platypus import (
     Image as RLImage,
     NextPageTemplate,
     PageTemplate,
+    PageBreak,
     Paragraph,
     Spacer,
     Table,
@@ -75,7 +76,7 @@ class _NumberedCanvas(pdfcanvas.Canvas):
 
 def _make_header_footer(hospital_name: str, doc_ref: str, version: str, logo_path: str | None):
     def draw(canvas_obj, page_num, total_pages):
-        width, height = A4
+        width, height = canvas_obj._pagesize
         margin = 1.6 * cm
 
         if logo_path:
@@ -212,6 +213,7 @@ def build_executive_pdf(
     division_table_rows: list[list],
     reception_table_rows: list[list],
     methodology: dict,
+    abbreviation_table_rows: list[list] | None = None,
     logo_path: str | None = None,
     version: str = "1.0",
 ) -> bytes:
@@ -219,10 +221,29 @@ def build_executive_pdf(
     doc_ref = _doc_reference_number(now)
     styles = _styles()
 
+    portrait_size = A4
+    landscape_size = landscape(A4)
+    top_margin, bottom_margin, side_margin = 2.4 * cm, 1.9 * cm, 1.6 * cm
+
     buffer = io.BytesIO()
-    doc = BaseDocTemplate(buffer, pagesize=A4, topMargin=2.4 * cm, bottomMargin=1.9 * cm, leftMargin=1.6 * cm, rightMargin=1.6 * cm)
-    frame = Frame(doc.leftMargin, doc.bottomMargin, doc.width, doc.height, id="body")
-    doc.addPageTemplates([PageTemplate(id="main", frames=[frame])])
+    doc = BaseDocTemplate(
+        buffer, pagesize=portrait_size,
+        topMargin=top_margin, bottomMargin=bottom_margin, leftMargin=side_margin, rightMargin=side_margin,
+    )
+    portrait_frame = Frame(
+        side_margin, bottom_margin, portrait_size[0] - 2 * side_margin, portrait_size[1] - top_margin - bottom_margin,
+        id="portrait_body",
+    )
+    landscape_frame = Frame(
+        side_margin, bottom_margin, landscape_size[0] - 2 * side_margin, landscape_size[1] - top_margin - bottom_margin,
+        id="landscape_body",
+    )
+    doc.addPageTemplates(
+        [
+            PageTemplate(id="portrait", frames=[portrait_frame], pagesize=portrait_size),
+            PageTemplate(id="landscape", frames=[landscape_frame], pagesize=landscape_size),
+        ]
+    )
 
     story = []
     story.append(Paragraph("Official Medical Laboratory Statistics Report", styles["Title"]))
@@ -298,6 +319,26 @@ def build_executive_pdf(
     story.append(Spacer(1, 16))
     story.append(Paragraph("Approval", styles["Section"]))
     story.append(_signature_block(styles))
+
+    if abbreviation_table_rows:
+        story.append(NextPageTemplate("landscape"))
+        story.append(PageBreak())
+        story.append(Paragraph("Report Format 3: Compact Abbreviation Report", styles["Section"]))
+        story.append(
+            Paragraph(
+                "Every abbreviation is shown next to its standardized test name and laboratory "
+                "division so it is never displayed without a legend.",
+                styles["Small"],
+            )
+        )
+        story.append(Spacer(1, 8))
+        story.append(
+            _data_table(
+                ["Abbreviation", "Standard Test Name", "Division", "Patient Count", "Request Count", "Analytical Test Count"],
+                abbreviation_table_rows,
+                col_widths=[3.2 * cm, 8.5 * cm, 4.5 * cm, 3.4 * cm, 3.4 * cm, 4.2 * cm],
+            )
+        )
 
     header_footer_fn = _make_header_footer(hospital_name, doc_ref, version, logo_path)
     doc.build(
