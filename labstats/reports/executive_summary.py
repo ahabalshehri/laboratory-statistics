@@ -17,9 +17,28 @@ CANCELLED_KEYWORDS = {"cancel", "cancelled", "canceled"}
 PENDING_KEYWORDS = {"pending", "ordered", "in progress", "collected"}
 
 
-def _status_count(df: pd.DataFrame, keywords: set[str]) -> int:
+def _status_mask(df: pd.DataFrame, keywords: set[str]) -> pd.Series:
     statuses = df["lab_order_status"].fillna("").map(normalize)
-    return int(statuses.apply(lambda s: any(k in s for k in keywords)).sum())
+    return statuses.apply(lambda s: any(k in s for k in keywords))
+
+
+def _status_request_count(df: pd.DataFrame, keywords: set[str]) -> int:
+    """Distinct requests (Order No) matching a status - the same basis as
+    Samples Received/Requests, for statuses that describe a sample/request
+    (e.g. rejected)."""
+    mask = _status_mask(df, keywords)
+    return int(df.loc[mask, "order_no"].nunique())
+
+
+def _status_test_count(df: pd.DataFrame, keywords: set[str]) -> int:
+    """Analytical-test-unit count matching a status - the same basis as
+    Analytical Tests Performed. Summing units (rather than counting rows)
+    means package marker rows (0 units) and absorbed duplicate lines (0
+    units) don't inflate the count, and each real analytical test - whether
+    it came from an individual line or a package component - is counted
+    exactly once."""
+    mask = _status_mask(df, keywords)
+    return int(df.loc[mask, "analytical_test_units"].sum())
 
 
 @dataclass
@@ -88,9 +107,9 @@ def build_executive_summary(
         "average_requests_per_patient": safe_average(core.requests, core.unique_patients),
         "average_analytical_tests_per_patient": safe_average(core.analytical_tests, core.unique_patients),
         "average_analytical_tests_per_day": safe_average(core.analytical_tests, core.operational_days),
-        "rejected_samples_or_tests": _status_count(filtered, REJECTED_KEYWORDS),
-        "cancelled_tests": _status_count(filtered, CANCELLED_KEYWORDS),
-        "pending_tests": _status_count(filtered, PENDING_KEYWORDS),
+        "rejected_samples": _status_request_count(filtered, REJECTED_KEYWORDS),
+        "cancelled_tests": _status_test_count(filtered, CANCELLED_KEYWORDS),
+        "pending_tests": _status_test_count(filtered, PENDING_KEYWORDS),
         "records_missing_patient_identifier": core.records_missing_patient_id,
     }
 

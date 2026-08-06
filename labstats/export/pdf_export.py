@@ -341,7 +341,7 @@ def build_executive_pdf(
         ("tests", "Analytical Tests Performed", indicators.get("total_analytical_tests_performed", "-")),
         ("average", "Avg. Patients / Day", indicators.get("average_patients_received_per_day", "-")),
         ("average", "Avg. Tests / Patient", indicators.get("average_analytical_tests_per_patient", "-")),
-        ("alert", "Rejected / Cancelled / Pending", f"{indicators.get('rejected_samples_or_tests', 0)} / {indicators.get('cancelled_tests', 0)} / {indicators.get('pending_tests', 0)}"),
+        ("alert", "Rejected Samples / Cancelled / Pending Tests", f"{indicators.get('rejected_samples', 0)} / {indicators.get('cancelled_tests', 0)} / {indicators.get('pending_tests', 0)}"),
     ]
     story.append(_indicator_cards(card_defs, styles))
 

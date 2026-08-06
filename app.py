@@ -22,6 +22,7 @@ from labstats.reports.executive_summary import build_executive_summary
 from labstats.reports.full_test_report import build_full_test_report
 from labstats.reports.package_report import build_package_report
 from labstats.reports.patient_reception_report import build_patient_reception_report
+from labstats.reports.patients_received_summary import build_patients_received_summary
 from labstats.stats.analytical_units import compute_analytical_units
 from labstats.stats.engine import CountingConfig, compute_core_counts
 
@@ -168,6 +169,14 @@ def main():
         with_units, master_result.package_component_mismatches, unmatched_report, activity_result.metadata
     )
 
+    if start_date is not None and end_date is not None and start_date.month == end_date.month and start_date.year == end_date.year:
+        month_label = start_date.strftime("%B %Y")
+    elif start_date is not None and end_date is not None:
+        month_label = f"{start_date} to {end_date}"
+    else:
+        month_label = "All Available Dates"
+    patients_summary_table = build_patients_received_summary(display_filtered, month_label)
+
     tabs = st.tabs(
         [
             "Executive Summary",
@@ -176,6 +185,7 @@ def main():
             "Abbreviation Report",
             "Package Utilization",
             "Patient Reception",
+            "Patients Received Summary",
             "Data Quality",
             "Unmatched Tests",
             "Export",
@@ -207,7 +217,7 @@ def main():
             {
                 k: v
                 for k, v in executive.indicators.items()
-                if k.startswith("average") or k in ("rejected_samples_or_tests", "cancelled_tests", "pending_tests")
+                if k.startswith("average") or k in ("rejected_samples", "cancelled_tests", "pending_tests")
             }
         )
 
@@ -265,20 +275,30 @@ def main():
             st.plotly_chart(fig, width="stretch")
 
     with tabs[6]:
+        st.subheader("Patients Received Summary")
+        st.caption(
+            "Matches the hospital's internal monthly reporting template: total patients received, "
+            "by nationality, by gender, and by division. The per-division Total sums each division's "
+            "unique-patient count and can exceed the true overall unique-patient total shown above, "
+            "since a patient tested in more than one division is counted once per division."
+        )
+        st.dataframe(patients_summary_table, width="stretch", hide_index=True)
+
+    with tabs[7]:
         st.subheader("Report Format 8: Data Quality Report")
         if dq_result.issues.empty:
             st.success("No data quality issues detected.")
         else:
             st.dataframe(dq_result.issues, width="stretch")
 
-    with tabs[7]:
+    with tabs[8]:
         st.subheader("Unmatched Tests Report")
         if unmatched_report.empty:
             st.success("Every test description in the activity file matched the master list.")
         else:
             st.dataframe(unmatched_report, width="stretch")
 
-    with tabs[8]:
+    with tabs[9]:
         st.subheader("Export")
         workbook_bytes = build_workbook(
             executive.indicators,
@@ -288,6 +308,7 @@ def main():
             abbreviation_table,
             package_table,
             reception_table,
+            patients_summary_table,
             dq_result.issues,
             unmatched_report,
         )
