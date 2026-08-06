@@ -87,8 +87,8 @@ def compute_core_counts(
         patient_visits = valid_patients["order_no"].nunique()
 
     requests = int(df["order_no"].nunique())
-    package_line_items = int((df["is_package"] == True).sum())  # noqa: E712
-    individual_test_line_items = int((df["is_package"] == False).sum())  # noqa: E712
+    package_line_items = int((df["row_kind"] == "package").sum())
+    individual_test_line_items = int((df["row_kind"] == "individual").sum())
 
     if config.sample_rule == "one_per_request":
         samples_received = requests

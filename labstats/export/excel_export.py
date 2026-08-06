@@ -27,6 +27,7 @@ def build_workbook(
     division_table: pd.DataFrame,
     full_test_table: pd.DataFrame,
     abbreviation_table: pd.DataFrame,
+    package_table: pd.DataFrame,
     patient_reception_table: pd.DataFrame,
     data_quality_table: pd.DataFrame,
     unmatched_table: pd.DataFrame,
@@ -50,6 +51,7 @@ def build_workbook(
         _write_sheet(writer, division_table, "Division Statistics")
         _write_sheet(writer, full_test_table, "Full Test-Name Sheet")
         _write_sheet(writer, abbreviation_table, "Abbreviation Sheet")
+        _write_sheet(writer, package_table, "Package Analysis Sheet")
         _write_sheet(writer, patient_reception_table, "Patient Statistics Sheet")
         _write_sheet(writer, data_quality_table, "Data Quality Sheet")
         _write_sheet(writer, unmatched_table, "Unmatched Tests Sheet")

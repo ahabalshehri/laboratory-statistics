@@ -10,6 +10,7 @@ from labstats.stats.aggregate import aggregate_by
 
 def build_abbreviation_report(with_units: pd.DataFrame) -> pd.DataFrame:
     df = with_units.copy()
+    df = df[df["row_kind"] != "package"]
     df["division"] = df["division"].replace("", "Unclassified / Missing Division")
     df["abbreviation_display"] = df["abbreviation"].replace("", "(no abbreviation on file)")
 

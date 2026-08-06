@@ -113,18 +113,43 @@ def test_mapping_matches_known_tests_and_reports_unmatched():
     assert unmatched_names == {"Cholesterol", "Some Unknown Test"}
 
 
-def test_analytical_units_absorbs_duplicate_package_component():
+def test_analytical_units_explodes_package_into_components():
     master = make_master()
     activity = make_activity()
     mapped = map_activity_tests(activity, master).mapped
     with_units = compute_analytical_units(mapped, master)
 
-    by_test = with_units.set_index("test_description")
-    assert by_test.loc["Lipid Profile Panel", "analytical_test_units"] == 4
-    assert by_test.loc["Cholesterol", "analytical_test_units"] == 0
-    assert by_test.loc["Cholesterol", "absorbed_by_package"]
+    # The package's own order line carries zero units - the workload moves to
+    # its exploded component parameters instead of being lumped under the
+    # package's own name.
+    package_row = with_units[with_units["row_kind"] == "package"]
+    assert len(package_row) == 1
+    assert package_row.iloc[0]["analytical_test_units"] == 0
+    assert package_row.iloc[0]["standard_report_name"] == "Lipid Profile Panel"
+
+    # Each of the package's four components accumulates its own count of 1.
+    by_component = with_units[with_units["row_kind"] == "package_component"].set_index(
+        "standard_report_name"
+    )
+    assert set(by_component.index) == {"Cholesterol", "Triglycerides", "HDL", "LDL"}
+    assert (by_component["analytical_test_units"] == 1).all()
+
+    # The pre-existing duplicate individual "Cholesterol" order line (already a
+    # component of the package ordered in the same request) is absorbed to zero,
+    # so Cholesterol's total across both rows is exactly 1 - not double counted.
+    original_cholesterol = with_units[
+        (with_units["test_description"] == "Cholesterol") & (with_units["row_kind"] != "package_component")
+    ]
+    assert original_cholesterol.iloc[0]["analytical_test_units"] == 0
+    assert original_cholesterol.iloc[0]["absorbed_by_package"]
+    total_cholesterol_units = with_units.loc[
+        with_units["standard_report_name"] == "Cholesterol", "analytical_test_units"
+    ].sum()
+    assert total_cholesterol_units == 1
+
     # unmatched test still counts as 1 analytical test even without a master match
-    assert by_test.loc["Some Unknown Test", "analytical_test_units"] == 1
+    unmatched_row = with_units[with_units["test_description"] == "Some Unknown Test"]
+    assert unmatched_row.iloc[0]["analytical_test_units"] == 1
 
 
 def test_core_counts_separates_measurements_correctly():

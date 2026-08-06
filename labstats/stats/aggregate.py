@@ -7,8 +7,8 @@ from labstats.stats.engine import derive_patient_id
 def aggregate_by(df: pd.DataFrame, group_cols: list[str]) -> pd.DataFrame:
     work = df.copy()
     work["patient_id"] = derive_patient_id(work)
-    work["_is_package_line"] = work["is_package"] == True  # noqa: E712
-    work["_is_individual_line"] = work["is_package"] == False  # noqa: E712
+    work["_is_package_line"] = work["row_kind"] == "package"
+    work["_is_individual_line"] = work["row_kind"] == "individual"
 
     grouped = work.groupby(group_cols, dropna=False)
     result = grouped.agg(

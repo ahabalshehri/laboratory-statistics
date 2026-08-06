@@ -19,6 +19,7 @@ from labstats.reports.data_quality import build_data_quality_report
 from labstats.reports.division_summary import build_division_summary
 from labstats.reports.executive_summary import build_executive_summary
 from labstats.reports.full_test_report import build_full_test_report
+from labstats.reports.package_report import build_package_report
 from labstats.reports.patient_reception_report import build_patient_reception_report
 from labstats.stats.analytical_units import compute_analytical_units
 from labstats.stats.engine import CountingConfig, compute_core_counts
@@ -144,6 +145,7 @@ def main():
     division_result = build_division_summary(display_filtered, core_counts.operational_days)
     full_test_table = build_full_test_report(display_filtered)
     abbreviation_table = build_abbreviation_report(display_filtered)
+    package_table = build_package_report(display_filtered)
     reception_table = build_patient_reception_report(display_filtered, core_counts.unique_patients)
     dq_result = build_data_quality_report(
         with_units, master_result.package_component_mismatches, mapping_result.unmatched_report, activity_result.metadata
@@ -155,6 +157,7 @@ def main():
             "Division Statistics",
             "Full Test-Name Report",
             "Abbreviation Report",
+            "Package Utilization",
             "Patient Reception",
             "Data Quality",
             "Unmatched Tests",
@@ -216,9 +219,25 @@ def main():
 
     with tabs[3]:
         st.subheader("Report Format 3: Compact Abbreviation Report")
+        st.caption(
+            "Packages are excluded here - their component parameters (e.g. TFT's T3/T4/TSH) "
+            "each accumulate their own count instead of being lumped under the package name. "
+            "See Package Utilization for package-level ordering counts."
+        )
         st.dataframe(abbreviation_table, width="stretch")
 
     with tabs[4]:
+        st.subheader("Report Format 7: Package Utilization")
+        st.caption(
+            "How often each package itself was ordered, and whether its declared component count "
+            "(from the master list) matches the actual list of components on file."
+        )
+        st.dataframe(package_table, width="stretch")
+        mismatches = package_table[package_table["component_count_mismatch"]] if len(package_table) else package_table
+        if len(mismatches):
+            st.warning(f"{len(mismatches)} package(s) have a declared vs. actual component count mismatch - review the master list.")
+
+    with tabs[5]:
         st.subheader("Report Format 4: Patient Reception and Workload Report")
         st.dataframe(reception_table, width="stretch")
         if len(reception_table):
@@ -228,21 +247,21 @@ def main():
             )
             st.plotly_chart(fig, width="stretch")
 
-    with tabs[5]:
+    with tabs[6]:
         st.subheader("Report Format 8: Data Quality Report")
         if dq_result.issues.empty:
             st.success("No data quality issues detected.")
         else:
             st.dataframe(dq_result.issues, width="stretch")
 
-    with tabs[6]:
+    with tabs[7]:
         st.subheader("Unmatched Tests Report")
         if mapping_result.unmatched_report.empty:
             st.success("Every test description in the activity file matched the master list.")
         else:
             st.dataframe(mapping_result.unmatched_report, width="stretch")
 
-    with tabs[7]:
+    with tabs[8]:
         st.subheader("Export")
         workbook_bytes = build_workbook(
             executive.indicators,
@@ -250,6 +269,7 @@ def main():
             division_result.table,
             full_test_table,
             abbreviation_table,
+            package_table,
             reception_table,
             dq_result.issues,
             mapping_result.unmatched_report,
