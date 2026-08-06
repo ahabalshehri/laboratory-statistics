@@ -50,11 +50,17 @@ def _build_working_dataset(master_key, activity_key, _master_result, _activity_r
     """Runs the mapping/classification/analytical-units chain once per uploaded
     file pair (cached on master_key/activity_key). Without this, every sidebar
     filter or date-range change would re-run this - the most expensive part of
-    the pipeline - from scratch on every rerun."""
+    the pipeline - from scratch on every rerun.
+
+    Returns only the unmatched-tests report rather than the full mapping
+    result, since mapping_result.mapped is a full-size duplicate dataframe
+    superseded by with_units - caching both would roughly double the memory
+    this holds onto for the lifetime of the session, which matters once a
+    file gets into the tens of thousands of rows."""
     mapping_result = map_activity_tests(_activity_result.data, _master_result.tests)
     classified = classify_patient_types(mapping_result.mapped)
     with_units = compute_analytical_units(classified, _master_result.tests)
-    return mapping_result, with_units
+    return mapping_result.unmatched_report, with_units
 
 
 def main():
@@ -114,7 +120,7 @@ def main():
         st.error(f"Could not load the files: {exc}")
         return
 
-    mapping_result, with_units = _build_working_dataset(master_key, activity_key, master_result, activity_result)
+    unmatched_report, with_units = _build_working_dataset(master_key, activity_key, master_result, activity_result)
 
     with st.sidebar:
         st.header("2. Reporting Period")
@@ -159,7 +165,7 @@ def main():
     package_table = build_package_report(display_filtered)
     reception_table = build_patient_reception_report(display_filtered, core_counts.unique_patients)
     dq_result = build_data_quality_report(
-        with_units, master_result.package_component_mismatches, mapping_result.unmatched_report, activity_result.metadata
+        with_units, master_result.package_component_mismatches, unmatched_report, activity_result.metadata
     )
 
     tabs = st.tabs(
@@ -267,10 +273,10 @@ def main():
 
     with tabs[7]:
         st.subheader("Unmatched Tests Report")
-        if mapping_result.unmatched_report.empty:
+        if unmatched_report.empty:
             st.success("Every test description in the activity file matched the master list.")
         else:
-            st.dataframe(mapping_result.unmatched_report, width="stretch")
+            st.dataframe(unmatched_report, width="stretch")
 
     with tabs[8]:
         st.subheader("Export")
@@ -283,7 +289,7 @@ def main():
             package_table,
             reception_table,
             dq_result.issues,
-            mapping_result.unmatched_report,
+            unmatched_report,
         )
         st.download_button(
             "Download Excel Workbook (all reports)",
