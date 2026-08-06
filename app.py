@@ -294,7 +294,7 @@ def main():
             ["patient_category", "unique_patients", "requests", "analytical_tests", "pct_of_total_patients", "pct_of_total_workload"]
         ].values.tolist()
         abbrev_rows = abbreviation_table[
-            ["abbreviation", "standard_report_name", "division", "patient_count", "request_count", "analytical_test_count"]
+            ["division", "abbreviation", "analytical_test_count"]
         ].values.tolist()
         pdf_bytes = build_executive_pdf(
             hospital_name=activity_result.metadata.get("hospital_name") or "Laboratory",

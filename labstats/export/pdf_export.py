@@ -178,6 +178,41 @@ def _data_table(headers, rows, col_widths=None):
     return table
 
 
+def _data_table_grouped_first_col(headers, rows, col_widths=None):
+    """Like _data_table, but shows the first column's value only on the first
+    row of each run of consecutive identical values (e.g. grouping test rows
+    by Division without repeating the division name on every line). Rows must
+    already be sorted so identical first-column values are contiguous.
+
+    A true merged cell (Table SPAN) cannot be split across a page break, which
+    crashes reportlab's pagination once a group is long enough to span pages -
+    blanking the repeated label instead gets the same grouped look safely."""
+    grouped_rows = []
+    previous = object()
+    for row in rows:
+        display_row = list(row)
+        if display_row[0] == previous:
+            display_row[0] = ""
+        else:
+            previous = display_row[0]
+        grouped_rows.append(display_row)
+
+    table_data = [headers] + grouped_rows
+    table = Table(table_data, colWidths=col_widths, repeatRows=1)
+    style = [
+        ("BACKGROUND", (0, 0), (-1, 0), NAVY),
+        ("TEXTCOLOR", (0, 0), (-1, 0), colors.white),
+        ("FONTNAME", (0, 0), (-1, 0), "Helvetica-Bold"),
+        ("FONTSIZE", (0, 0), (-1, -1), 8.5),
+        ("GRID", (0, 0), (-1, -1), 0.5, GRID_GRAY),
+        ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
+        ("TOPPADDING", (0, 0), (-1, -1), 5),
+        ("BOTTOMPADDING", (0, 0), (-1, -1), 5),
+    ]
+    table.setStyle(TableStyle(style))
+    return table
+
+
 def _signature_block(styles):
     def blank_col(title):
         return [
@@ -326,17 +361,17 @@ def build_executive_pdf(
         story.append(Paragraph("Report Format 3: Compact Abbreviation Report", styles["Section"]))
         story.append(
             Paragraph(
-                "Every abbreviation is shown next to its standardized test name and laboratory "
-                "division so it is never displayed without a legend.",
+                "Grouped by laboratory division; each abbreviation's analytical test count is "
+                "accumulated per parameter (see Full Test-Name Report methodology).",
                 styles["Small"],
             )
         )
         story.append(Spacer(1, 8))
         story.append(
-            _data_table(
-                ["Abbreviation", "Standard Test Name", "Division", "Patient Count", "Request Count", "Analytical Test Count"],
+            _data_table_grouped_first_col(
+                ["Division", "Abbreviation", "Analytical Test Count"],
                 abbreviation_table_rows,
-                col_widths=[3.2 * cm, 8.5 * cm, 4.5 * cm, 3.4 * cm, 3.4 * cm, 4.2 * cm],
+                col_widths=[6.0 * cm, 8.0 * cm, 6.0 * cm],
             )
         )
 
