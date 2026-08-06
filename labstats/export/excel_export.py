@@ -30,6 +30,7 @@ def build_workbook(
     package_table: pd.DataFrame,
     patient_reception_table: pd.DataFrame,
     patients_received_summary_table: pd.DataFrame,
+    division_month_matrix: pd.DataFrame,
     data_quality_table: pd.DataFrame,
     unmatched_table: pd.DataFrame,
 ) -> bytes:
@@ -55,6 +56,7 @@ def build_workbook(
         _write_sheet(writer, package_table, "Package Analysis Sheet")
         _write_sheet(writer, patient_reception_table, "Patient Statistics Sheet")
         _write_sheet(writer, patients_received_summary_table, "Patients Received Summary")
+        _write_sheet(writer, division_month_matrix, "Division by Month")
         _write_sheet(writer, data_quality_table, "Data Quality Sheet")
         _write_sheet(writer, unmatched_table, "Unmatched Tests Sheet")
 

@@ -22,7 +22,7 @@ from labstats.reports.executive_summary import build_executive_summary
 from labstats.reports.full_test_report import build_full_test_report
 from labstats.reports.package_report import build_package_report
 from labstats.reports.patient_reception_report import build_patient_reception_report
-from labstats.reports.patients_received_summary import build_patients_received_summary
+from labstats.reports.patients_received_summary import build_division_month_matrix, build_patients_received_summary
 from labstats.stats.analytical_units import compute_analytical_units
 from labstats.stats.engine import CountingConfig, compute_core_counts
 
@@ -169,13 +169,8 @@ def main():
         with_units, master_result.package_component_mismatches, unmatched_report, activity_result.metadata
     )
 
-    if start_date is not None and end_date is not None and start_date.month == end_date.month and start_date.year == end_date.year:
-        month_label = start_date.strftime("%B %Y")
-    elif start_date is not None and end_date is not None:
-        month_label = f"{start_date} to {end_date}"
-    else:
-        month_label = "All Available Dates"
-    patients_summary_table = build_patients_received_summary(display_filtered, month_label)
+    patients_summary_table = build_patients_received_summary(display_filtered)
+    division_month_matrix = build_division_month_matrix(display_filtered)
 
     tabs = st.tabs(
         [
@@ -278,11 +273,19 @@ def main():
         st.subheader("Patients Received Summary")
         st.caption(
             "Matches the hospital's internal monthly reporting template: total patients received, "
-            "by nationality, by gender, and by division. The per-division Total sums each division's "
-            "unique-patient count and can exceed the true overall unique-patient total shown above, "
-            "since a patient tested in more than one division is counted once per division."
+            "by nationality, and by gender."
         )
         st.dataframe(patients_summary_table, width="stretch", hide_index=True)
+
+        st.markdown("**Division by Month**")
+        st.caption(
+            "Each cell is that division's unique-patient count within that single calendar month. "
+            "The Total column is each division's true unique-patient count across the whole selected "
+            "period (not a sum of the month columns). The Total row sums each month across divisions "
+            "and can exceed the true overall unique-patient total, since a patient tested in more than "
+            "one division that month is counted once per division."
+        )
+        st.dataframe(division_month_matrix, width="stretch", hide_index=True)
 
     with tabs[7]:
         st.subheader("Report Format 8: Data Quality Report")
@@ -309,6 +312,7 @@ def main():
             package_table,
             reception_table,
             patients_summary_table,
+            division_month_matrix,
             dq_result.issues,
             unmatched_report,
         )
