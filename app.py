@@ -45,6 +45,18 @@ def _load_activity(path_bytes_key, path, filename):
     return load_activity_file(path, source_filename=filename)
 
 
+@st.cache_data(show_spinner="Mapping tests and computing analytical units...")
+def _build_working_dataset(master_key, activity_key, _master_result, _activity_result):
+    """Runs the mapping/classification/analytical-units chain once per uploaded
+    file pair (cached on master_key/activity_key). Without this, every sidebar
+    filter or date-range change would re-run this - the most expensive part of
+    the pipeline - from scratch on every rerun."""
+    mapping_result = map_activity_tests(_activity_result.data, _master_result.tests)
+    classified = classify_patient_types(mapping_result.mapped)
+    with_units = compute_analytical_units(classified, _master_result.tests)
+    return mapping_result, with_units
+
+
 def main():
     st.title("Medical Laboratory Statistics and Official Reporting System")
     st.caption(
@@ -102,9 +114,7 @@ def main():
         st.error(f"Could not load the files: {exc}")
         return
 
-    mapping_result = map_activity_tests(activity_result.data, master_result.tests)
-    classified = classify_patient_types(mapping_result.mapped)
-    with_units = compute_analytical_units(classified, master_result.tests)
+    mapping_result, with_units = _build_working_dataset(master_key, activity_key, master_result, activity_result)
 
     with st.sidebar:
         st.header("2. Reporting Period")

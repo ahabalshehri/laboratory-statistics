@@ -11,7 +11,15 @@ units live on the exploded component rows instead.
 If the same order also contains a separate line item for a test that is
 already a component of a package ordered in that same order, that duplicate
 individual line is absorbed (zeroed out) instead of counted twice.
+
+Implementation note: the absorption and explosion logic below works on plain
+Python dicts/lists rather than pandas .iterrows()/.at[] - at hospital-scale
+data (tens of thousands of activity rows) per-cell pandas access is the
+dominant cost, so converting to records once up front and rebuilding a
+DataFrame at the end is an order of magnitude faster for the same result.
 """
+from collections import defaultdict
+
 import pandas as pd
 
 from labstats.mapping.test_mapping import build_lookups
@@ -23,12 +31,12 @@ ROW_KIND_PACKAGE_COMPONENT = "package_component"
 ROW_KIND_UNMATCHED = "unmatched"
 
 
-def _resolve_component(raw_name: str, lookups: dict, master: pd.DataFrame) -> dict:
+def _resolve_component(raw_name: str, lookups: dict, master_records: dict) -> dict:
     norm = normalize(raw_name)
     for tier in ("by_norm", "by_abbreviation_norm", "by_fullname_norm"):
         idx = lookups[tier].get(norm)
         if idx is not None:
-            row = master.loc[idx]
+            row = master_records[idx]
             return {
                 "standard_report_name": row["his_test_name"],
                 "full_test_name": row["full_test_name"] or row["his_test_name"],
@@ -52,78 +60,80 @@ def compute_analytical_units(mapped: pd.DataFrame, master: pd.DataFrame) -> pd.D
     out["analytical_test_units"] = 1
     out["absorbed_by_package"] = False
     out["package_component_note"] = ""
-
-    out["row_kind"] = out["is_package"].map(
-        {True: ROW_KIND_PACKAGE, False: ROW_KIND_INDIVIDUAL}
-    )
+    out["row_kind"] = out["is_package"].map({True: ROW_KIND_PACKAGE, False: ROW_KIND_INDIVIDUAL})
     out["row_kind"] = out["row_kind"].fillna(ROW_KIND_UNMATCHED)
+    out.loc[out["is_package"] == True, "analytical_test_units"] = 0  # noqa: E712
 
-    is_pkg = out["is_package"] == True  # noqa: E712 (explicit True excludes None/NaN)
-    out.loc[is_pkg, "analytical_test_units"] = 0  # units move to the exploded component rows below
-
-    master_by_row_number = master.set_index("row_number") if "row_number" in master.columns else master
     lookups = build_lookups(master)
+    master_records = master.set_index(master.index).to_dict("index")
+    components_by_row_number: dict = {}
+    if "row_number" in master.columns:
+        for row in master_records.values():
+            components_by_row_number[row["row_number"]] = row["components"]
+
+    records = out.to_dict("records")
+    normalized_names = [normalize(r["standard_report_name"]) for r in records]
+
+    order_groups: dict = defaultdict(list)
+    for i, r in enumerate(records):
+        order_groups[r["order_no"]].append(i)
+
+    package_indices = [i for i, r in enumerate(records) if r["is_package"] is True]
 
     # Absorb duplicate individual lines within the same order that are already
     # covered by a package ordered in that same order.
-    for order_no, group in out.groupby("order_no", dropna=False):
-        package_rows = group[group["is_package"] == True]  # noqa: E712
-        if package_rows.empty:
+    for pkg_idx in package_indices:
+        pkg_record = records[pkg_idx]
+        components = components_by_row_number.get(pkg_record.get("master_row_number"))
+        if not components:
             continue
-        for pkg_idx, pkg_row in package_rows.iterrows():
-            master_row_num = pkg_row.get("master_row_number")
-            if master_row_num is None or master_row_num not in master_by_row_number.index:
+        components_norm = {normalize(c) for c in components}
+        if not components_norm:
+            continue
+        for other_idx in order_groups[pkg_record["order_no"]]:
+            if other_idx == pkg_idx or records[other_idx]["absorbed_by_package"]:
                 continue
-            components_norm = {normalize(c) for c in master_by_row_number.loc[master_row_num, "components"]}
-            if not components_norm:
-                continue
-            for other_idx, other_row in group.iterrows():
-                if other_idx == pkg_idx or out.at[other_idx, "absorbed_by_package"]:
-                    continue
-                candidate_norm = normalize(other_row["standard_report_name"])
-                if candidate_norm and candidate_norm in components_norm:
-                    out.at[other_idx, "analytical_test_units"] = 0
-                    out.at[other_idx, "absorbed_by_package"] = True
-                    out.at[other_idx, "package_component_note"] = (
-                        f"Absorbed into package '{pkg_row['standard_report_name']}' "
-                        f"(order {order_no}) to avoid double counting."
-                    )
+            if normalized_names[other_idx] and normalized_names[other_idx] in components_norm:
+                records[other_idx]["analytical_test_units"] = 0
+                records[other_idx]["absorbed_by_package"] = True
+                records[other_idx]["package_component_note"] = (
+                    f"Absorbed into package '{pkg_record['standard_report_name']}' "
+                    f"(order {pkg_record['order_no']}) to avoid double counting."
+                )
 
     # Explode each package row into one row per component parameter, each worth
     # exactly 1 analytical test, attributed under the component's own standardized
     # identity where the master list recognizes it as its own test.
-    component_rows = []
-    shared_cols = [c for c in out.columns if c not in ("standard_report_name", "full_test_name", "abbreviation", "division", "is_package", "master_row_number", "matched", "match_method", "row_kind", "analytical_test_units", "absorbed_by_package", "package_component_note")]
+    exclude_cols = {
+        "standard_report_name", "full_test_name", "abbreviation", "division", "is_package",
+        "master_row_number", "matched", "match_method", "row_kind", "analytical_test_units",
+        "absorbed_by_package", "package_component_note",
+    }
+    shared_cols = [c for c in out.columns if c not in exclude_cols]
 
-    for pkg_idx in out.index[is_pkg]:
-        pkg_row = out.loc[pkg_idx]
-        master_row_num = pkg_row.get("master_row_number")
-        components = []
-        if master_row_num is not None and master_row_num in master_by_row_number.index:
-            components = master_by_row_number.loc[master_row_num, "components"]
+    component_records = []
+    for pkg_idx in package_indices:
+        pkg_record = records[pkg_idx]
+        components = components_by_row_number.get(pkg_record.get("master_row_number"))
         if not components:
-            declared = pkg_row.get("declared_component_count") or pkg_row.get("actual_component_count") or 0
-            components = [f"{pkg_row['standard_report_name']} (component {i + 1})" for i in range(int(declared))]
+            declared = pkg_record.get("declared_component_count") or pkg_record.get("actual_component_count") or 0
+            components = [f"{pkg_record['standard_report_name']} (component {i + 1})" for i in range(int(declared))]
 
         for component_name in components:
-            resolved = _resolve_component(component_name, lookups, master)
+            resolved = _resolve_component(component_name, lookups, master_records)
             if not resolved["division"]:
-                resolved["division"] = pkg_row["division"]  # fall back to the parent package's division
-            new_row = {col: pkg_row[col] for col in shared_cols}
-            new_row.update(resolved)
-            new_row["is_package"] = False
-            new_row["match_method"] = "package_component"
-            new_row["row_kind"] = ROW_KIND_PACKAGE_COMPONENT
-            new_row["analytical_test_units"] = 1
-            new_row["absorbed_by_package"] = False
-            new_row["package_component_note"] = (
-                f"Component of package '{pkg_row['standard_report_name']}' (order {pkg_row['order_no']})."
+                resolved["division"] = pkg_record["division"]  # fall back to the parent package's division
+            new_record = {col: pkg_record[col] for col in shared_cols}
+            new_record.update(resolved)
+            new_record["is_package"] = False
+            new_record["match_method"] = "package_component"
+            new_record["row_kind"] = ROW_KIND_PACKAGE_COMPONENT
+            new_record["analytical_test_units"] = 1
+            new_record["absorbed_by_package"] = False
+            new_record["package_component_note"] = (
+                f"Component of package '{pkg_record['standard_report_name']}' (order {pkg_record['order_no']})."
             )
-            component_rows.append(new_row)
+            component_records.append(new_record)
 
-    if component_rows:
-        out = pd.concat([out, pd.DataFrame(component_rows)], ignore_index=True, sort=False)
-    else:
-        out = out.reset_index(drop=True)
-
-    return out
+    all_records = records + component_records
+    return pd.DataFrame.from_records(all_records)
