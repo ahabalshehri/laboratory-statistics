@@ -138,69 +138,109 @@ def _styles():
     return styles
 
 
+CARD_GRID_WIDTH = 17.6 * cm
+CARD_GAP = 0.35 * cm
+
+
+def _kpi_card(icon_name: str, label: str, value, accent: colors.Color, card_width: float, styles):
+    """A single white KPI card: thin colored top accent, uppercase gray label
+    with a small colored icon badge in the top-right corner, and a large bold
+    value beneath - the flat card-with-accent-border look of a modern ops
+    dashboard, not a filled colored box."""
+    value_text = str(value)
+    if len(value_text) > 16:
+        value_style = ParagraphStyle("CardValueSmall", parent=styles["CardValue"], fontSize=11.5, leading=14)
+    elif len(value_text) > 9:
+        value_style = ParagraphStyle("CardValueMed", parent=styles["CardValue"], fontSize=15, leading=18)
+    else:
+        value_style = ParagraphStyle("CardValueLarge", parent=styles["CardValue"], fontSize=21, leading=24)
+
+    icon_bytes = icon_png_bytes(icon_name, _rgb255(accent), 64)
+    img = RLImage(io.BytesIO(icon_bytes), width=0.55 * cm, height=0.55 * cm)
+    label_p = Paragraph(label.upper(), styles["CardLabel"])
+
+    inner_width = card_width - 1.7 * cm
+    header = Table([[label_p, img]], colWidths=[inner_width - 0.7 * cm, 0.7 * cm])
+    header.setStyle(
+        TableStyle(
+            [
+                ("VALIGN", (0, 0), (-1, -1), "TOP"),
+                ("ALIGN", (1, 0), (1, 0), "RIGHT"),
+                ("LEFTPADDING", (0, 0), (-1, -1), 0),
+                ("RIGHTPADDING", (0, 0), (-1, -1), 0),
+                ("TOPPADDING", (0, 0), (-1, -1), 0),
+                ("BOTTOMPADDING", (0, 0), (-1, -1), 0),
+            ]
+        )
+    )
+    value_p = Paragraph(value_text, value_style)
+    body = Table([[header], [value_p]], colWidths=[inner_width])
+    body.setStyle(
+        TableStyle(
+            [
+                ("LEFTPADDING", (0, 0), (-1, -1), 0),
+                ("RIGHTPADDING", (0, 0), (-1, -1), 0),
+                ("TOPPADDING", (0, 0), (0, 0), 0),
+                ("BOTTOMPADDING", (0, 0), (0, 0), 9),
+                ("TOPPADDING", (0, 1), (0, 1), 0),
+                ("BOTTOMPADDING", (0, 1), (0, 1), 0),
+            ]
+        )
+    )
+    card = Table([[body]], colWidths=[card_width])
+    card.setStyle(
+        TableStyle(
+            [
+                ("BOX", (0, 0), (-1, -1), 0.75, GRID_GRAY),
+                ("LINEABOVE", (0, 0), (-1, 0), 3, accent),
+                ("BACKGROUND", (0, 0), (-1, -1), colors.white),
+                ("TOPPADDING", (0, 0), (-1, -1), 12),
+                ("BOTTOMPADDING", (0, 0), (-1, -1), 12),
+                ("LEFTPADDING", (0, 0), (-1, -1), 12),
+                ("RIGHTPADDING", (0, 0), (-1, -1), 12),
+            ]
+        )
+    )
+    return card
+
+
 def _indicator_cards(indicators: list[tuple[str, str, str, colors.Color, colors.Color]], styles, columns: int = 3):
-    """indicators: list of (icon_name, label, value, accent_color, tint_color).
+    """indicators: list of (icon_name, label, value, accent_color, _unused).
 
-    Renders a grid of cards, each with a colored top accent strip and a
-    matching light tint background - the accent color carries meaning
-    (blue = volume, red = needs attention, green = healthy, indigo = insight),
-    so the most important numbers are visible before reading any label."""
-    card_width = 17.6 * cm / columns
-    cells, accents, tints = [], [], []
-    for icon_name, label, value, accent, tint in indicators:
-        icon_bytes = icon_png_bytes(icon_name, _rgb255(accent), 64)
-        img = RLImage(io.BytesIO(icon_bytes), width=0.8 * cm, height=0.8 * cm)
-        label_p = Paragraph(label.upper(), styles["CardLabel"])
-        header_row = Table([[img, label_p]], colWidths=[1.0 * cm, card_width - 1.4 * cm])
-        header_row.setStyle(
-            TableStyle(
-                [
-                    ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
-                    ("LEFTPADDING", (0, 0), (-1, -1), 0),
-                    ("TOPPADDING", (0, 0), (-1, -1), 0),
-                    ("BOTTOMPADDING", (0, 0), (-1, -1), 0),
-                ]
-            )
+    Renders a row of independent white cards (each with its own border and
+    colored top accent) separated by real gaps, rather than one shared
+    bordered grid - so they read as distinct cards, not a filled table."""
+    card_width = (CARD_GRID_WIDTH - CARD_GAP * (columns - 1)) / columns
+    cards = [_kpi_card(icon_name, label, value, accent, card_width, styles) for icon_name, label, value, accent, _ in indicators]
+
+    col_widths = []
+    for i in range(columns):
+        col_widths.append(card_width)
+        if i < columns - 1:
+            col_widths.append(CARD_GAP)
+
+    grid_rows = []
+    for i in range(0, len(cards), columns):
+        row_cards = cards[i : i + columns]
+        row = []
+        for j in range(columns):
+            if j > 0:
+                row.append("")
+            row.append(row_cards[j] if j < len(row_cards) else "")
+        grid_rows.append(row)
+
+    grid = Table(grid_rows, colWidths=col_widths)
+    grid.setStyle(
+        TableStyle(
+            [
+                ("LEFTPADDING", (0, 0), (-1, -1), 0),
+                ("RIGHTPADDING", (0, 0), (-1, -1), 0),
+                ("TOPPADDING", (0, 0), (-1, -1), 0),
+                ("BOTTOMPADDING", (0, 0), (-1, -1), CARD_GAP),
+                ("VALIGN", (0, 0), (-1, -1), "TOP"),
+            ]
         )
-        value_p = Paragraph(str(value), styles["CardValue"])
-        card = Table([[header_row], [value_p]], colWidths=[card_width - 1.0 * cm])
-        card.setStyle(
-            TableStyle(
-                [
-                    ("LEFTPADDING", (0, 0), (-1, -1), 0),
-                    ("RIGHTPADDING", (0, 0), (-1, -1), 0),
-                    ("TOPPADDING", (0, 0), (0, 0), 0),
-                    ("BOTTOMPADDING", (0, 0), (0, 0), 5),
-                    ("TOPPADDING", (0, 1), (0, 1), 1),
-                    ("BOTTOMPADDING", (0, 1), (0, 1), 0),
-                ]
-            )
-        )
-        cells.append(card)
-        accents.append(accent)
-        tints.append(tint)
-
-    rows_of_cells = [cells[i : i + columns] for i in range(0, len(cells), columns)]
-    rows_of_accents = [accents[i : i + columns] for i in range(0, len(accents), columns)]
-    rows_of_tints = [tints[i : i + columns] for i in range(0, len(tints), columns)]
-
-    style_cmds = [
-        ("BOX", (0, 0), (-1, -1), 0.6, GRID_GRAY),
-        ("INNERGRID", (0, 0), (-1, -1), 0.6, GRID_GRAY),
-        ("TOPPADDING", (0, 0), (-1, -1), 10),
-        ("BOTTOMPADDING", (0, 0), (-1, -1), 10),
-        ("LEFTPADDING", (0, 0), (-1, -1), 10),
-        ("RIGHTPADDING", (0, 0), (-1, -1), 10),
-    ]
-    for r, (row_cells, row_accents, row_tints) in enumerate(zip(rows_of_cells, rows_of_accents, rows_of_tints)):
-        for c, (accent, tint) in enumerate(zip(row_accents, row_tints)):
-            style_cmds.append(("LINEABOVE", (c, r), (c, r), 2.6, accent))
-            style_cmds.append(("BACKGROUND", (c, r), (c, r), tint))
-        while len(row_cells) < columns:
-            row_cells.append("")
-
-    grid = Table(rows_of_cells, colWidths=[card_width] * columns)
-    grid.setStyle(TableStyle(style_cmds))
+    )
     return grid
 
 
