@@ -29,6 +29,7 @@ class MasterListResult:
     tests: pd.DataFrame
     duplicate_his_names: pd.DataFrame
     package_component_mismatches: pd.DataFrame
+    duplicate_abbreviations: pd.DataFrame
     load_warnings: list = field(default_factory=list)
 
 
@@ -133,9 +134,25 @@ def load_master_list(path: str) -> MasterListResult:
     )
     package_component_mismatches = tests.loc[mismatch_mask]
 
+    # Flag one abbreviation assigned to more than one genuinely different test
+    # name - per spec, tests must never be silently combined just because they
+    # share an abbreviation; this needs a human to confirm it's intentional
+    # (e.g. a screening/confirmatory pair) or a master-list data-entry error.
+    with_abbrev = tests[tests["abbreviation"] != ""]
+    ambiguous_abbrevs = (
+        with_abbrev.groupby("abbreviation")["his_test_name"]
+        .nunique()
+        .loc[lambda s: s > 1]
+        .index
+    )
+    duplicate_abbreviations = with_abbrev[with_abbrev["abbreviation"].isin(ambiguous_abbrevs)].sort_values(
+        "abbreviation"
+    )
+
     return MasterListResult(
         tests=tests,
         duplicate_his_names=duplicate_his_names,
         package_component_mismatches=package_component_mismatches,
+        duplicate_abbreviations=duplicate_abbreviations,
         load_warnings=warnings,
     )

@@ -41,6 +41,7 @@ def build_data_quality_report(
     master_package_mismatches: pd.DataFrame,
     unmatched_report: pd.DataFrame,
     activity_metadata: dict | None = None,
+    master_duplicate_abbreviations: pd.DataFrame | None = None,
 ) -> DataQualityResult:
     rows = []
     df = mapped.copy()
@@ -97,6 +98,22 @@ def build_data_quality_report(
                 master_package_mismatches.iloc[0]["his_test_name"],
                 "Review declared vs. actual component counts for this package in the master list "
                 "(duplicated or missing component entries).",
+            )
+        )
+
+    if master_duplicate_abbreviations is not None and len(master_duplicate_abbreviations):
+        example_abbrev = master_duplicate_abbreviations.iloc[0]["abbreviation"]
+        example_names = master_duplicate_abbreviations.loc[
+            master_duplicate_abbreviations["abbreviation"] == example_abbrev, "his_test_name"
+        ].tolist()
+        rows.append(
+            _issue_row(
+                "Same Abbreviation Assigned to Different Tests in Master List",
+                master_duplicate_abbreviations["abbreviation"].nunique(),
+                f"'{example_abbrev}' used for: {', '.join(example_names)}",
+                "The Abbreviation Report counts these together under one abbreviation for the compact "
+                "view - confirm this is intentional (e.g. screening/confirmatory pair) or correct the "
+                "master list if it's a data-entry error.",
             )
         )
 

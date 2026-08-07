@@ -166,7 +166,11 @@ def main():
     package_table = build_package_report(display_filtered)
     reception_table = build_patient_reception_report(display_filtered, core_counts.unique_patients)
     dq_result = build_data_quality_report(
-        with_units, master_result.package_component_mismatches, unmatched_report, activity_result.metadata
+        with_units,
+        master_result.package_component_mismatches,
+        unmatched_report,
+        activity_result.metadata,
+        master_result.duplicate_abbreviations,
     )
 
     patients_summary_table = build_patients_received_summary(display_filtered)
@@ -189,7 +193,11 @@ def main():
 
     with tabs[0]:
         st.subheader(activity_result.metadata.get("hospital_name") or "Laboratory")
-        st.caption("Laboratory and Blood Bank Department - Official Laboratory Statistics Report")
+        declared_period = activity_result.metadata.get("declared_period_label")
+        caption = "Laboratory and Blood Bank Department - Official Laboratory Statistics Report"
+        if declared_period:
+            caption += f" | Reporting Period: {declared_period}"
+        st.caption(caption)
         c1, c2, c3, c4 = st.columns(4)
         c1.metric("Unique Patients Received", core_counts.unique_patients)
         c2.metric("Patient Visits", core_counts.patient_visits)
@@ -325,7 +333,7 @@ def main():
 
         st.divider()
         logo_path = Path("reference_data/logo.png")
-        period_label = (
+        period_label = activity_result.metadata.get("declared_period_label") or (
             f"{start_date} to {end_date}" if start_date is not None else "All available dates"
         )
         div_rows = division_result.table[

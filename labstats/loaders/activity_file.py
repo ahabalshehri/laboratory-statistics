@@ -88,6 +88,7 @@ def _parse_metadata(raw: pd.DataFrame, header_row: int, source_filename: str) ->
         "hospital_name": lines[0] if lines else None,
         "period_start": None,
         "period_end": None,
+        "declared_period_label": None,
         "generated_at": None,
         "generated_by": None,
     }
@@ -101,6 +102,14 @@ def _parse_metadata(raw: pd.DataFrame, header_row: int, source_filename: str) ->
         if gen_match:
             metadata["generated_at"] = gen_match.group(1).strip()
             metadata["generated_by"] = gen_match.group(2).strip()
+
+    if metadata["period_start"] and metadata["period_end"]:
+        try:
+            start = pd.Timestamp(metadata["period_start"])
+            end = pd.Timestamp(metadata["period_end"])
+            metadata["declared_period_label"] = f"{start:%b-%Y} to {end:%b-%Y}"
+        except (ValueError, TypeError):
+            pass
 
     return metadata
 
