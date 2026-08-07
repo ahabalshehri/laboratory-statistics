@@ -34,6 +34,17 @@ NAVY = colors.Color(20 / 255, 70 / 255, 110 / 255)
 BLUE = colors.Color(30 / 255, 150 / 255, 210 / 255)
 LIGHT_BLUE = colors.Color(228 / 255, 243 / 255, 250 / 255)
 GRID_GRAY = colors.Color(210 / 255, 210 / 255, 210 / 255)
+LIGHT_GRAY_BG = colors.Color(246 / 255, 247 / 255, 249 / 255)
+GREEN = colors.Color(30 / 255, 160 / 255, 90 / 255)
+LIGHT_GREEN = colors.Color(226 / 255, 246 / 255, 236 / 255)
+RED = colors.Color(210 / 255, 60 / 255, 60 / 255)
+LIGHT_RED = colors.Color(252 / 255, 231 / 255, 231 / 255)
+INDIGO = colors.Color(95 / 255, 80 / 255, 190 / 255)
+LIGHT_INDIGO = colors.Color(233 / 255, 230 / 255, 250 / 255)
+
+
+def _rgb255(c: colors.Color) -> tuple[int, int, int]:
+    return (int(c.red * 255), int(c.green * 255), int(c.blue * 255))
 
 CONFIDENTIALITY_STATEMENT = (
     "CONFIDENTIAL - For internal hospital management and quality review use only. "
@@ -43,7 +54,7 @@ CONFIDENTIALITY_STATEMENT = (
 
 
 def _doc_reference_number(now: datetime) -> str:
-    return f"LAB-STAT-{now:%Y%m%d-%H%M%S}"
+    return f"LAB-STAT-{now:%Y%m%d-%H%M}"
 
 
 class _NumberedCanvas(pdfcanvas.Canvas):
@@ -119,44 +130,77 @@ def _styles():
         "Section": ParagraphStyle("Section", parent=base["Heading2"], fontSize=12.5, textColor=NAVY, spaceBefore=14, spaceAfter=6),
         "Body": ParagraphStyle("Body", parent=base["Normal"], fontSize=9, leading=13),
         "Small": ParagraphStyle("Small", parent=base["Normal"], fontSize=8, leading=11, textColor=colors.gray),
-        "CardLabel": ParagraphStyle("CardLabel", parent=base["Normal"], fontSize=8.5, textColor=colors.gray),
-        "CardValue": ParagraphStyle("CardValue", parent=base["Normal"], fontSize=15, textColor=NAVY, fontName="Helvetica-Bold"),
+        "CardLabel": ParagraphStyle("CardLabel", parent=base["Normal"], fontSize=7.3, textColor=colors.Color(0.4, 0.42, 0.46), fontName="Helvetica-Bold", leading=9.5),
+        "CardValue": ParagraphStyle("CardValue", parent=base["Normal"], fontSize=17, textColor=NAVY, fontName="Helvetica-Bold"),
+        "InfoLabel": ParagraphStyle("InfoLabel", parent=base["Normal"], fontSize=6.8, textColor=colors.Color(0.5, 0.52, 0.56), fontName="Helvetica-Bold"),
+        "InfoValue": ParagraphStyle("InfoValue", parent=base["Normal"], fontSize=9.5, textColor=NAVY, fontName="Helvetica-Bold"),
     }
     return styles
 
 
-def _indicator_cards(indicators: list[tuple[str, str, str]], styles):
-    """indicators: list of (icon_name, label, value). Renders a 3-column grid of icon+label+value cards."""
-    cells = []
-    for icon_name, label, value in indicators:
-        icon_bytes = icon_png_bytes(icon_name, BADGE_BLUE, 64)
-        img = RLImage(io.BytesIO(icon_bytes), width=0.9 * cm, height=0.9 * cm)
-        text_table = Table(
-            [[Paragraph(label, styles["CardLabel"])], [Paragraph(str(value), styles["CardValue"])]],
-            colWidths=[4.0 * cm],
-        )
-        text_table.setStyle(TableStyle([("LEFTPADDING", (0, 0), (-1, -1), 0), ("TOPPADDING", (0, 0), (-1, -1), 0), ("BOTTOMPADDING", (0, 0), (-1, -1), 0)]))
-        inner = Table([[img, text_table]], colWidths=[1.1 * cm, 4.0 * cm])
-        inner.setStyle(TableStyle([("VALIGN", (0, 0), (-1, -1), "MIDDLE"), ("LEFTPADDING", (0, 0), (-1, -1), 0)]))
-        cells.append(inner)
+def _indicator_cards(indicators: list[tuple[str, str, str, colors.Color, colors.Color]], styles, columns: int = 3):
+    """indicators: list of (icon_name, label, value, accent_color, tint_color).
 
-    rows = [cells[i : i + 3] for i in range(0, len(cells), 3)]
-    while rows and len(rows[-1]) < 3:
-        rows[-1].append("")
-
-    grid = Table(rows, colWidths=[5.7 * cm] * 3)
-    grid.setStyle(
-        TableStyle(
-            [
-                ("BOX", (0, 0), (-1, -1), 0.6, GRID_GRAY),
-                ("INNERGRID", (0, 0), (-1, -1), 0.6, GRID_GRAY),
-                ("BACKGROUND", (0, 0), (-1, -1), colors.white),
-                ("TOPPADDING", (0, 0), (-1, -1), 8),
-                ("BOTTOMPADDING", (0, 0), (-1, -1), 8),
-                ("LEFTPADDING", (0, 0), (-1, -1), 8),
-            ]
+    Renders a grid of cards, each with a colored top accent strip and a
+    matching light tint background - the accent color carries meaning
+    (blue = volume, red = needs attention, green = healthy, indigo = insight),
+    so the most important numbers are visible before reading any label."""
+    card_width = 17.6 * cm / columns
+    cells, accents, tints = [], [], []
+    for icon_name, label, value, accent, tint in indicators:
+        icon_bytes = icon_png_bytes(icon_name, _rgb255(accent), 64)
+        img = RLImage(io.BytesIO(icon_bytes), width=0.8 * cm, height=0.8 * cm)
+        label_p = Paragraph(label.upper(), styles["CardLabel"])
+        header_row = Table([[img, label_p]], colWidths=[1.0 * cm, card_width - 1.4 * cm])
+        header_row.setStyle(
+            TableStyle(
+                [
+                    ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
+                    ("LEFTPADDING", (0, 0), (-1, -1), 0),
+                    ("TOPPADDING", (0, 0), (-1, -1), 0),
+                    ("BOTTOMPADDING", (0, 0), (-1, -1), 0),
+                ]
+            )
         )
-    )
+        value_p = Paragraph(str(value), styles["CardValue"])
+        card = Table([[header_row], [value_p]], colWidths=[card_width - 1.0 * cm])
+        card.setStyle(
+            TableStyle(
+                [
+                    ("LEFTPADDING", (0, 0), (-1, -1), 0),
+                    ("RIGHTPADDING", (0, 0), (-1, -1), 0),
+                    ("TOPPADDING", (0, 0), (0, 0), 0),
+                    ("BOTTOMPADDING", (0, 0), (0, 0), 5),
+                    ("TOPPADDING", (0, 1), (0, 1), 1),
+                    ("BOTTOMPADDING", (0, 1), (0, 1), 0),
+                ]
+            )
+        )
+        cells.append(card)
+        accents.append(accent)
+        tints.append(tint)
+
+    rows_of_cells = [cells[i : i + columns] for i in range(0, len(cells), columns)]
+    rows_of_accents = [accents[i : i + columns] for i in range(0, len(accents), columns)]
+    rows_of_tints = [tints[i : i + columns] for i in range(0, len(tints), columns)]
+
+    style_cmds = [
+        ("BOX", (0, 0), (-1, -1), 0.6, GRID_GRAY),
+        ("INNERGRID", (0, 0), (-1, -1), 0.6, GRID_GRAY),
+        ("TOPPADDING", (0, 0), (-1, -1), 10),
+        ("BOTTOMPADDING", (0, 0), (-1, -1), 10),
+        ("LEFTPADDING", (0, 0), (-1, -1), 10),
+        ("RIGHTPADDING", (0, 0), (-1, -1), 10),
+    ]
+    for r, (row_cells, row_accents, row_tints) in enumerate(zip(rows_of_cells, rows_of_accents, rows_of_tints)):
+        for c, (accent, tint) in enumerate(zip(row_accents, row_tints)):
+            style_cmds.append(("LINEABOVE", (c, r), (c, r), 2.6, accent))
+            style_cmds.append(("BACKGROUND", (c, r), (c, r), tint))
+        while len(row_cells) < columns:
+            row_cells.append("")
+
+    grid = Table(rows_of_cells, colWidths=[card_width] * columns)
+    grid.setStyle(TableStyle(style_cmds))
     return grid
 
 
@@ -272,6 +316,9 @@ def build_executive_pdf(
     reception_table_rows: list[list],
     methodology: dict,
     abbreviation_table_rows: list[list] | None = None,
+    highest_volume_division: str | None = None,
+    highest_volume_test: str | None = None,
+    highest_volume_category: str | None = None,
     logo_path: str | None = None,
     version: str = "1.0",
 ) -> bytes:
@@ -303,47 +350,91 @@ def build_executive_pdf(
         ]
     )
 
-    story = []
-    story.append(Paragraph("Official Medical Laboratory Statistics Report", styles["Title"]))
-    story.append(Paragraph(f"Reporting Period: {period_label}", styles["Subtitle"]))
+    band_title_style = ParagraphStyle("BandTitle", parent=styles["Title"], fontSize=12.5, spaceAfter=2, alignment=0)
+    band_subtitle_style = ParagraphStyle("BandSubtitle", parent=styles["Small"], alignment=0)
 
-    meta_rows = [
-        ["Document Reference Number", doc_ref, "Version", version],
-        ["Report Generated", now.strftime("%Y-%m-%d %H:%M:%S"), "Date Basis", date_basis],
-    ]
-    meta_table = Table(meta_rows, colWidths=[4.6 * cm, 5.0 * cm, 2.6 * cm, 4.6 * cm])
-    meta_table.setStyle(
+    title_block = Table(
+        [[Paragraph("Official Medical Laboratory Statistics Report", band_title_style)], [Paragraph("Laboratory and Blood Bank Department · " + hospital_name, band_subtitle_style)]],
+        colWidths=[6.6 * cm],
+    )
+    title_block.setStyle(TableStyle([("LEFTPADDING", (0, 0), (-1, -1), 0), ("TOPPADDING", (0, 0), (-1, -1), 0), ("BOTTOMPADDING", (0, 0), (0, 0), 1)]))
+
+    def info_pair(label, value):
+        cell = Table(
+            [[Paragraph(label.upper(), styles["InfoLabel"])], [Paragraph(str(value), styles["InfoValue"])]],
+            colWidths=[3.0 * cm],
+        )
+        cell.setStyle(TableStyle([("LEFTPADDING", (0, 0), (-1, -1), 0), ("TOPPADDING", (0, 0), (-1, -1), 0), ("BOTTOMPADDING", (0, 0), (0, 0), 2)]))
+        return cell
+
+    header_band = Table(
+        [
+            [
+                title_block,
+                info_pair("Period", period_label),
+                info_pair("Generated", now.strftime("%d-%b-%Y")),
+                info_pair("Doc Ref", doc_ref),
+                info_pair("Version", version),
+            ]
+        ],
+        colWidths=[6.6 * cm, 2.4 * cm, 2.4 * cm, 3.6 * cm, 1.7 * cm],
+    )
+    header_band.setStyle(
         TableStyle(
             [
-                ("FONTSIZE", (0, 0), (-1, -1), 8.5),
-                ("FONTNAME", (0, 0), (0, -1), "Helvetica-Bold"),
-                ("FONTNAME", (2, 0), (2, -1), "Helvetica-Bold"),
-                ("BACKGROUND", (0, 0), (0, -1), LIGHT_BLUE),
-                ("BACKGROUND", (2, 0), (2, -1), LIGHT_BLUE),
-                ("GRID", (0, 0), (-1, -1), 0.5, GRID_GRAY),
                 ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
-                ("TOPPADDING", (0, 0), (-1, -1), 5),
-                ("BOTTOMPADDING", (0, 0), (-1, -1), 5),
+                ("BACKGROUND", (0, 0), (-1, -1), LIGHT_GRAY_BG),
+                ("LINEBEFORE", (0, 0), (0, 0), 3, BLUE),
+                ("LEFTPADDING", (0, 0), (0, 0), 14),
+                ("TOPPADDING", (0, 0), (-1, -1), 10),
+                ("BOTTOMPADDING", (0, 0), (-1, -1), 10),
+                ("RIGHTPADDING", (0, 0), (-1, -1), 8),
             ]
         )
     )
-    story.append(meta_table)
-    story.append(Spacer(1, 6))
-    story.append(Paragraph(CONFIDENTIALITY_STATEMENT, styles["Small"]))
+    story = [header_band, Spacer(1, 6), Paragraph(CONFIDENTIALITY_STATEMENT, styles["Small"]), Spacer(1, 10)]
 
     story.append(Paragraph("Executive Indicators", styles["Section"]))
-    card_defs = [
-        ("patients", "Unique Patients Received", indicators.get("total_unique_patients_received", "-")),
-        ("visits", "Patient Visits", indicators.get("total_patient_visits", "-")),
-        ("samples", "Samples Received", indicators.get("total_samples_received", "-")),
-        ("requests", "Laboratory Requests", indicators.get("total_laboratory_requests", "-")),
-        ("packages", "Package Line Items", indicators.get("total_package_line_items", "-")),
-        ("tests", "Analytical Tests Performed", indicators.get("total_analytical_tests_performed", "-")),
-        ("average", "Avg. Patients / Day", indicators.get("average_patients_received_per_day", "-")),
-        ("average", "Avg. Tests / Patient", indicators.get("average_analytical_tests_per_patient", "-")),
-        ("alert", "Rejected Samples / Cancelled / Pending Tests", f"{indicators.get('rejected_samples', 0)} / {indicators.get('cancelled_tests', 0)} / {indicators.get('pending_tests', 0)}"),
+
+    def _alert_colors(count: int):
+        return (RED, LIGHT_RED) if count else (GREEN, LIGHT_GREEN)
+
+    rejected = indicators.get("rejected_samples", 0) or 0
+    cancelled = indicators.get("cancelled_tests", 0) or 0
+    pending = indicators.get("pending_tests", 0) or 0
+
+    volume_cards = [
+        ("patients", "Unique Patients Received", indicators.get("total_unique_patients_received", "-"), BLUE, LIGHT_BLUE),
+        ("visits", "Patient Visits", indicators.get("total_patient_visits", "-"), BLUE, LIGHT_BLUE),
+        ("samples", "Samples Received", indicators.get("total_samples_received", "-"), BLUE, LIGHT_BLUE),
+        ("requests", "Laboratory Requests", indicators.get("total_laboratory_requests", "-"), BLUE, LIGHT_BLUE),
+        ("packages", "Package Line Items", indicators.get("total_package_line_items", "-"), BLUE, LIGHT_BLUE),
+        ("tests", "Analytical Tests Performed", indicators.get("total_analytical_tests_performed", "-"), BLUE, LIGHT_BLUE),
     ]
-    story.append(_indicator_cards(card_defs, styles))
+    story.append(_indicator_cards(volume_cards, styles))
+    story.append(Spacer(1, 8))
+
+    highlight_cards = [
+        ("division", "Highest-Volume Division", highest_volume_division or "Not Applicable", INDIGO, LIGHT_INDIGO),
+        ("tests", "Highest-Volume Test", highest_volume_test or "Not Applicable", INDIGO, LIGHT_INDIGO),
+        ("patients", "Highest-Volume Category", highest_volume_category or "Not Applicable", INDIGO, LIGHT_INDIGO),
+    ]
+    story.append(_indicator_cards(highlight_cards, styles))
+    story.append(Spacer(1, 8))
+
+    average_cards = [
+        ("average", "Avg. Patients / Day", indicators.get("average_patients_received_per_day", "-"), BLUE, LIGHT_BLUE),
+        ("average", "Avg. Tests / Patient", indicators.get("average_analytical_tests_per_patient", "-"), BLUE, LIGHT_BLUE),
+    ]
+    story.append(_indicator_cards(average_cards, styles, columns=2))
+    story.append(Spacer(1, 8))
+
+    alert_cards = [
+        ("alert", "Rejected Samples", rejected, *_alert_colors(rejected)),
+        ("alert", "Cancelled Tests", cancelled, *_alert_colors(cancelled)),
+        ("alert", "Pending Tests", pending, *_alert_colors(pending)),
+    ]
+    story.append(_indicator_cards(alert_cards, styles))
 
     if division_table_rows:
         story.append(Paragraph("Statistics by Laboratory Division", styles["Section"]))

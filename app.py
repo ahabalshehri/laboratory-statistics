@@ -354,6 +354,9 @@ def main():
             reception_table_rows=rec_rows,
             methodology=executive.methodology,
             abbreviation_table_rows=abbrev_rows,
+            highest_volume_division=executive.highest_volume_division,
+            highest_volume_test=executive.highest_volume_test,
+            highest_volume_category=executive.highest_volume_patient_category,
             logo_path=str(logo_path) if logo_path.exists() else None,
         )
         st.download_button(
