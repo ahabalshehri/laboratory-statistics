@@ -345,6 +345,9 @@ def main():
         abbrev_rows = abbreviation_table[
             ["division", "full_test_name", "analytical_test_count"]
         ].values.tolist()
+        patients_summary_rows = patients_summary_table.values.tolist()
+        division_month_headers = list(division_month_matrix.columns) if len(division_month_matrix) else None
+        division_month_rows = division_month_matrix.values.tolist() if len(division_month_matrix) else None
         pdf_bytes = build_executive_pdf(
             hospital_name=activity_result.metadata.get("hospital_name") or "Laboratory",
             period_label=period_label,
@@ -357,6 +360,9 @@ def main():
             highest_volume_division=executive.highest_volume_division,
             highest_volume_test=executive.highest_volume_test,
             highest_volume_category=executive.highest_volume_patient_category,
+            patients_summary_rows=patients_summary_rows,
+            division_month_headers=division_month_headers,
+            division_month_rows=division_month_rows,
             logo_path=str(logo_path) if logo_path.exists() else None,
         )
         st.download_button(

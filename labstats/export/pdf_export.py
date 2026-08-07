@@ -320,6 +320,34 @@ def _totals_table(headers, rows, col_widths=None):
     return table
 
 
+def _matrix_table(headers, rows, col_widths=None):
+    """Grid table with both a highlighted Total row (last row) and a
+    highlighted Total column (last column) - for the Division x Month
+    matrix, where both carry meaning worth calling out."""
+    table_data = [headers] + rows
+    table = Table(table_data, colWidths=col_widths, repeatRows=1)
+    last_row = len(table_data) - 1
+    last_col = len(headers) - 1
+    style = [
+        ("BACKGROUND", (0, 0), (-1, 0), NAVY),
+        ("TEXTCOLOR", (0, 0), (-1, 0), colors.white),
+        ("FONTNAME", (0, 0), (-1, 0), "Helvetica-Bold"),
+        ("FONTSIZE", (0, 0), (-1, -1), 8),
+        ("GRID", (0, 0), (-1, -1), 0.5, GRID_GRAY),
+        ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
+        ("TOPPADDING", (0, 0), (-1, -1), 4.5),
+        ("BOTTOMPADDING", (0, 0), (-1, -1), 4.5),
+        ("ROWBACKGROUNDS", (0, 1), (-1, last_row - 1), [colors.white, LIGHT_BLUE]),
+        ("BACKGROUND", (0, last_row), (-1, last_row), BLUE),
+        ("TEXTCOLOR", (0, last_row), (-1, last_row), colors.white),
+        ("FONTNAME", (0, last_row), (-1, last_row), "Helvetica-Bold"),
+        ("BACKGROUND", (last_col, 1), (last_col, last_row - 1), LIGHT_INDIGO),
+        ("FONTNAME", (last_col, 0), (last_col, last_row - 1), "Helvetica-Bold"),
+    ]
+    table.setStyle(TableStyle(style))
+    return table
+
+
 def _signature_block(styles):
     def blank_col(title):
         return [
@@ -359,6 +387,9 @@ def build_executive_pdf(
     highest_volume_division: str | None = None,
     highest_volume_test: str | None = None,
     highest_volume_category: str | None = None,
+    patients_summary_rows: list[list] | None = None,
+    division_month_headers: list[str] | None = None,
+    division_month_rows: list[list] | None = None,
     logo_path: str | None = None,
     version: str = "1.0",
 ) -> bytes:
@@ -496,6 +527,23 @@ def build_executive_pdf(
             )
         )
 
+    if patients_summary_rows:
+        story.append(Paragraph("Patients Received Summary", styles["Section"]))
+        story.append(
+            Paragraph(
+                "Total patients received for the period, by nationality and by gender.",
+                styles["Small"],
+            )
+        )
+        story.append(Spacer(1, 4))
+        story.append(
+            _data_table_grouped_first_col(
+                ["Category", "Subcategory", "Count"],
+                patients_summary_rows,
+                col_widths=[6.0 * cm, 6.0 * cm, 5.6 * cm],
+            )
+        )
+
     story.append(Paragraph("Methodology / Report Notes", styles["Section"]))
     for key, value in methodology.items():
         label = key.replace("_", " ").title()
@@ -509,9 +557,12 @@ def build_executive_pdf(
     story.append(Paragraph("Approval", styles["Section"]))
     story.append(_signature_block(styles))
 
-    if abbreviation_table_rows:
+    has_month_matrix = bool(division_month_headers and division_month_rows)
+    if abbreviation_table_rows or has_month_matrix:
         story.append(NextPageTemplate("landscape"))
         story.append(PageBreak())
+
+    if abbreviation_table_rows:
         story.append(Paragraph("Report Format 2: Test Workload by Full Name", styles["Section"]))
         story.append(
             Paragraph(
@@ -548,6 +599,27 @@ def build_executive_pdf(
                 col_widths=[6.0 * cm, 8.0 * cm, 6.0 * cm],
             )
         )
+
+    if has_month_matrix:
+        story.append(Spacer(1, 16))
+        story.append(Paragraph("Division by Month", styles["Section"]))
+        story.append(
+            Paragraph(
+                "Each cell is that division's unique-patient count within that single calendar "
+                "month. The Total column is the division's true unique-patient count across the "
+                "whole period (not a sum of the month columns). The Total row sums each month "
+                "across divisions and can exceed the true overall unique-patient total, since a "
+                "patient tested in more than one division that month is counted once per division.",
+                styles["Small"],
+            )
+        )
+        story.append(Spacer(1, 10))
+
+        n_cols = len(division_month_headers)
+        first_col_width = 4.5 * cm
+        other_col_width = (26.0 * cm - first_col_width) / (n_cols - 1)
+        col_widths = [first_col_width] + [other_col_width] * (n_cols - 1)
+        story.append(_matrix_table(division_month_headers, division_month_rows, col_widths=col_widths))
 
     header_footer_fn = _make_header_footer(hospital_name, doc_ref, version, logo_path)
     doc.build(
