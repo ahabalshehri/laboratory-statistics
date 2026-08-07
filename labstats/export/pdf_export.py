@@ -512,18 +512,18 @@ def build_executive_pdf(
     if abbreviation_table_rows:
         story.append(NextPageTemplate("landscape"))
         story.append(PageBreak())
-        story.append(Paragraph("Report Format 3: Compact Abbreviation Report", styles["Section"]))
+        story.append(Paragraph("Report Format 2: Test Workload by Full Name", styles["Section"]))
         story.append(
             Paragraph(
-                "Grouped by laboratory division; each abbreviation's analytical test count is "
-                "accumulated per parameter (see Full Test-Name Report methodology).",
+                "Grouped by laboratory division; each test's analytical test count is "
+                "accumulated per parameter, shown under its standardized full name.",
                 styles["Small"],
             )
         )
         story.append(Spacer(1, 10))
 
         division_totals: dict[str, int] = {}
-        for division, _abbreviation, count in abbreviation_table_rows:
+        for division, _full_test_name, count in abbreviation_table_rows:
             division_totals[division] = division_totals.get(division, 0) + count
         totals_rows = [[division, total] for division, total in division_totals.items()]
         totals_rows.append(["GRAND TOTAL", sum(division_totals.values())])
@@ -539,11 +539,11 @@ def build_executive_pdf(
         )
         story.append(Spacer(1, 16))
 
-        story.append(Paragraph("Detail by Abbreviation", styles["Body"]))
+        story.append(Paragraph("Detail by Test", styles["Body"]))
         story.append(Spacer(1, 4))
         story.append(
             _data_table_grouped_first_col(
-                ["Division", "Abbreviation", "Analytical Test Count"],
+                ["Division", "Test Full Name", "Analytical Test Count"],
                 abbreviation_table_rows,
                 col_widths=[6.0 * cm, 8.0 * cm, 6.0 * cm],
             )
