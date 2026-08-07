@@ -22,7 +22,11 @@ from labstats.reports.executive_summary import build_executive_summary
 from labstats.reports.full_test_report import build_full_test_report
 from labstats.reports.package_report import build_package_report
 from labstats.reports.patient_reception_report import build_patient_reception_report
-from labstats.reports.patients_received_summary import build_division_month_matrix, build_patients_received_summary
+from labstats.reports.patients_received_summary import (
+    build_category_division_matrix,
+    build_division_month_matrix,
+    build_patients_received_summary,
+)
 from labstats.stats.analytical_units import compute_analytical_units
 from labstats.stats.engine import CountingConfig, compute_core_counts
 
@@ -175,6 +179,7 @@ def main():
 
     patients_summary_table = build_patients_received_summary(display_filtered)
     division_month_matrix = build_division_month_matrix(display_filtered)
+    category_division_matrix = build_category_division_matrix(display_filtered)
 
     tabs = st.tabs(
         [
@@ -295,6 +300,13 @@ def main():
         )
         st.dataframe(division_month_matrix, width="stretch", hide_index=True)
 
+        st.markdown("**Patient Category by Division**")
+        st.caption(
+            "Each cell is that patient category's total analytical test count within that single "
+            "division. The Total column is the row sum across all divisions."
+        )
+        st.dataframe(category_division_matrix, width="stretch", hide_index=True)
+
     with tabs[7]:
         st.subheader("Report Format 8: Data Quality Report")
         if dq_result.issues.empty:
@@ -321,6 +333,7 @@ def main():
             reception_table,
             patients_summary_table,
             division_month_matrix,
+            category_division_matrix,
             dq_result.issues,
             unmatched_report,
         )
@@ -348,6 +361,8 @@ def main():
         patients_summary_rows = patients_summary_table.values.tolist()
         division_month_headers = list(division_month_matrix.columns) if len(division_month_matrix) else None
         division_month_rows = division_month_matrix.values.tolist() if len(division_month_matrix) else None
+        category_division_headers = list(category_division_matrix.columns) if len(category_division_matrix) else None
+        category_division_rows = category_division_matrix.values.tolist() if len(category_division_matrix) else None
         pdf_bytes = build_executive_pdf(
             hospital_name=activity_result.metadata.get("hospital_name") or "Laboratory",
             period_label=period_label,
@@ -363,6 +378,8 @@ def main():
             patients_summary_rows=patients_summary_rows,
             division_month_headers=division_month_headers,
             division_month_rows=division_month_rows,
+            category_division_headers=category_division_headers,
+            category_division_rows=category_division_rows,
             logo_path=str(logo_path) if logo_path.exists() else None,
         )
         st.download_button(

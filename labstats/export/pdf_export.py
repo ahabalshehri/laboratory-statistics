@@ -348,6 +348,30 @@ def _matrix_table(headers, rows, col_widths=None):
     return table
 
 
+def _row_total_table(headers, rows, col_widths=None):
+    """Grid table with only its last column highlighted as a per-row Total -
+    for matrices with no synthetic Total row, where highlighting the actual
+    last data row would misleadingly imply it's a grand total."""
+    table_data = [headers] + rows
+    table = Table(table_data, colWidths=col_widths, repeatRows=1)
+    last_col = len(headers) - 1
+    style = [
+        ("BACKGROUND", (0, 0), (-1, 0), NAVY),
+        ("TEXTCOLOR", (0, 0), (-1, 0), colors.white),
+        ("FONTNAME", (0, 0), (-1, 0), "Helvetica-Bold"),
+        ("FONTSIZE", (0, 0), (-1, -1), 8),
+        ("GRID", (0, 0), (-1, -1), 0.5, GRID_GRAY),
+        ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
+        ("TOPPADDING", (0, 0), (-1, -1), 4.5),
+        ("BOTTOMPADDING", (0, 0), (-1, -1), 4.5),
+        ("ROWBACKGROUNDS", (0, 1), (-1, -1), [colors.white, LIGHT_BLUE]),
+        ("BACKGROUND", (last_col, 1), (last_col, -1), LIGHT_INDIGO),
+        ("FONTNAME", (last_col, 0), (last_col, -1), "Helvetica-Bold"),
+    ]
+    table.setStyle(TableStyle(style))
+    return table
+
+
 def _signature_block(styles):
     def blank_col(title):
         return [
@@ -390,6 +414,8 @@ def build_executive_pdf(
     patients_summary_rows: list[list] | None = None,
     division_month_headers: list[str] | None = None,
     division_month_rows: list[list] | None = None,
+    category_division_headers: list[str] | None = None,
+    category_division_rows: list[list] | None = None,
     logo_path: str | None = None,
     version: str = "1.0",
 ) -> bytes:
@@ -558,7 +584,8 @@ def build_executive_pdf(
     story.append(_signature_block(styles))
 
     has_month_matrix = bool(division_month_headers and division_month_rows)
-    if abbreviation_table_rows or has_month_matrix:
+    has_category_matrix = bool(category_division_headers and category_division_rows)
+    if abbreviation_table_rows or has_month_matrix or has_category_matrix:
         story.append(NextPageTemplate("landscape"))
         story.append(PageBreak())
 
@@ -620,6 +647,24 @@ def build_executive_pdf(
         other_col_width = (26.0 * cm - first_col_width) / (n_cols - 1)
         col_widths = [first_col_width] + [other_col_width] * (n_cols - 1)
         story.append(_matrix_table(division_month_headers, division_month_rows, col_widths=col_widths))
+
+    if has_category_matrix:
+        story.append(Spacer(1, 16))
+        story.append(Paragraph("Patient Category by Division", styles["Section"]))
+        story.append(
+            Paragraph(
+                "Each cell is that patient category's total analytical test count within that "
+                "single division. The Total column is the row sum across all divisions.",
+                styles["Small"],
+            )
+        )
+        story.append(Spacer(1, 10))
+
+        n_cols = len(category_division_headers)
+        first_col_width = 4.5 * cm
+        other_col_width = (26.0 * cm - first_col_width) / (n_cols - 1)
+        col_widths = [first_col_width] + [other_col_width] * (n_cols - 1)
+        story.append(_row_total_table(category_division_headers, category_division_rows, col_widths=col_widths))
 
     header_footer_fn = _make_header_footer(hospital_name, doc_ref, version, logo_path)
     doc.build(

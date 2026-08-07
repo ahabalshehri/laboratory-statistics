@@ -5,6 +5,7 @@ of unique patients received.
 """
 import pandas as pd
 
+from labstats.reports.patient_reception_report import CATEGORY_ORDER
 from labstats.stats.engine import derive_patient_id
 from labstats.textnorm import normalize
 
@@ -74,4 +75,32 @@ def build_division_month_matrix(with_units: pd.DataFrame) -> pd.DataFrame:
     pivot.loc["Total"] = pivot.sum(numeric_only=True)
 
     pivot = pivot.reset_index().rename(columns={"division": "Division"})
+    return pivot
+
+
+def build_category_division_matrix(with_units: pd.DataFrame) -> pd.DataFrame:
+    """Patient Category x Division matrix of total analytical tests.
+
+    Each cell is that patient category's analytical test count within that
+    single division. Unlike unique-patient counts, analytical test counts
+    sum cleanly across divisions with no double-counting risk, so the Total
+    column here is simply the row sum.
+    """
+    needed = ["patient_category", "division", "analytical_test_units"]
+    df = with_units[needed].copy()
+    if df.empty:
+        return pd.DataFrame(columns=["Patient Category", "Total"])
+
+    df["division"] = df["division"].replace("", "Unclassified / Missing Division")
+
+    pivot = df.groupby(["patient_category", "division"])["analytical_test_units"].sum().unstack(fill_value=0)
+    column_order = pivot.sum(axis=0).sort_values(ascending=False).index.tolist()
+    pivot = pivot[column_order].astype(int)
+
+    pivot["Total"] = pivot.sum(axis=1)
+
+    ordered_index = [c for c in CATEGORY_ORDER if c in pivot.index] + [c for c in pivot.index if c not in CATEGORY_ORDER]
+    pivot = pivot.reindex(ordered_index)
+
+    pivot = pivot.reset_index().rename(columns={"patient_category": "Patient Category"})
     return pivot
