@@ -5,7 +5,12 @@ from labstats.stats.engine import derive_patient_id
 
 
 def aggregate_by(df: pd.DataFrame, group_cols: list[str]) -> pd.DataFrame:
-    work = df.copy()
+    # Select only the columns this needs before copying - with_units carries
+    # ~30 columns (including every raw HIS passthrough field), and copying
+    # all of them on every report call is the dominant memory cost once a
+    # file gets into the hundreds of thousands of rows.
+    needed = list(dict.fromkeys(group_cols + ["order_no", "row_kind", "analytical_test_units", "mrn", "id_number"]))
+    work = df[needed].copy()
     work["patient_id"] = derive_patient_id(work)
     work["_is_package_line"] = work["row_kind"] == "package"
     work["_is_individual_line"] = work["row_kind"] == "individual"

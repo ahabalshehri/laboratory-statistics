@@ -16,8 +16,8 @@ CATEGORY_ORDER = [
 
 
 def build_patient_reception_report(with_units: pd.DataFrame, total_unique_patients: int) -> pd.DataFrame:
-    df = with_units.copy()
-    table = aggregate_by(df, ["patient_category"])
+    # No need to copy here - aggregate_by only reads the columns it needs.
+    table = aggregate_by(with_units, ["patient_category"])
     total_workload = table["analytical_tests"].sum()
 
     table = add_percentage_of_total(table, "unique_patients", total_unique_patients, "pct_of_total_patients")

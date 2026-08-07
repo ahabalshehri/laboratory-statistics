@@ -27,7 +27,10 @@ class DivisionSummaryResult:
 
 
 def build_division_summary(with_units: pd.DataFrame, operational_days: int = 0) -> DivisionSummaryResult:
-    df = with_units.copy()
+    # Select only what's needed before copying - with_units carries ~30 columns
+    # (every raw HIS passthrough field included), and a full-width copy here
+    # is wasted cost at hospital scale since this report only touches a few.
+    df = with_units[["division", "order_no", "row_kind", "analytical_test_units", "mrn", "id_number"]].copy()
     df["division"] = df["division"].replace("", "Unclassified / Missing Division")
 
     table = aggregate_by(df, ["division"])

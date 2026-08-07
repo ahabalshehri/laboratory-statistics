@@ -14,8 +14,10 @@ from labstats.stats.aggregate import add_percentage_of_total, aggregate_by
 
 
 def build_full_test_report(with_units: pd.DataFrame) -> pd.DataFrame:
-    df = with_units.copy()
-    df = df[df["row_kind"] != "package"]
+    # Select only what's needed before copying/filtering - see division_summary.py.
+    needed = ["division", "standard_report_name", "full_test_name", "abbreviation", "row_kind", "order_no", "analytical_test_units", "mrn", "id_number"]
+    df = with_units[needed]
+    df = df[df["row_kind"] != "package"].copy()
     df["division"] = df["division"].replace("", "Unclassified / Missing Division")
 
     group_cols = ["division", "standard_report_name", "full_test_name", "abbreviation"]

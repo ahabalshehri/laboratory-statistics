@@ -12,7 +12,11 @@ from labstats.stats.aggregate import aggregate_by
 
 
 def build_package_report(with_units: pd.DataFrame) -> pd.DataFrame:
-    df = with_units[with_units["row_kind"] == "package"].copy()
+    needed = [
+        "row_kind", "standard_report_name", "abbreviation", "division", "order_no",
+        "analytical_test_units", "mrn", "id_number", "declared_component_count", "actual_component_count",
+    ]
+    df = with_units.loc[with_units["row_kind"] == "package", needed].copy()
     if df.empty:
         return pd.DataFrame(
             columns=[

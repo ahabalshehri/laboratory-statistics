@@ -16,8 +16,14 @@ NO_ABBREVIATION_LABEL = "(no abbreviation on file)"
 
 
 def build_abbreviation_report(with_units: pd.DataFrame) -> pd.DataFrame:
-    df = with_units.copy()
-    df = df[df["row_kind"] != "package"]
+    # Select only what's needed before copying/filtering - see division_summary.py.
+    # This report does several intermediate copies (with_abbrev/without_abbrev,
+    # a second groupby for the representative test name), so starting from a
+    # narrow slice rather than the full ~30-column with_units matters more
+    # here than almost anywhere else in the report set.
+    needed = ["division", "abbreviation", "full_test_name", "row_kind", "order_no", "analytical_test_units", "mrn", "id_number"]
+    df = with_units[needed]
+    df = df[df["row_kind"] != "package"].copy()
     df["division"] = df["division"].replace("", "Unclassified / Missing Division")
 
     has_abbrev = df["abbreviation"] != ""

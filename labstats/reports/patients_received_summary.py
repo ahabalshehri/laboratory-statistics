@@ -12,7 +12,7 @@ SUMMARY_COLUMNS = ["Category", "Subcategory", "Count"]
 
 
 def build_patients_received_summary(with_units: pd.DataFrame) -> pd.DataFrame:
-    df = with_units.copy()
+    df = with_units[["mrn", "id_number", "nationality", "gender"]].copy()
     df["patient_id"] = derive_patient_id(df)
     patients = df.dropna(subset=["patient_id"])
     patients = patients[patients["patient_id"].astype(str).str.strip() != ""]
@@ -53,7 +53,8 @@ def build_division_month_matrix(with_units: pd.DataFrame) -> pd.DataFrame:
     Total row sums each month's columns across divisions (a patient tested
     in more than one division that month is counted once per division).
     """
-    df = with_units[with_units["order_datetime"].notna()].copy()
+    needed = ["order_datetime", "division", "mrn", "id_number"]
+    df = with_units.loc[with_units["order_datetime"].notna(), needed].copy()
     df["patient_id"] = derive_patient_id(df)
     df = df[df["patient_id"].astype(str).str.strip() != ""]
     if df.empty:
