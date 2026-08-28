@@ -29,6 +29,7 @@ import pandas as pd
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from ayenati_external_stats import detect_header_row  # noqa: E402
+from fetch_export import resolve_input  # noqa: E402
 
 GENERATED_BY_RE = re.compile(r"^(.*generated on[:]?.*?)(?:\s*by[:].*)?$", re.IGNORECASE)
 
@@ -92,7 +93,7 @@ if __name__ == "__main__":
     if len(sys.argv) < 2:
         print(__doc__)
         sys.exit(1)
-    inp = sys.argv[1]
+    inp = str(resolve_input(sys.argv[1]))
     if len(sys.argv) >= 3:
         outp = sys.argv[2]
     else:

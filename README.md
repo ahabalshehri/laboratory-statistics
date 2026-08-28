@@ -34,17 +34,23 @@ Separate from the Streamlit app: a test-wise statistics report for the
 becomes an Excel workbook + Markdown report, published as a GitHub Actions
 artifact and committed under `reports/`.
 
-**Local, per day:**
+**Local, per day** - pass a local file *or a link* (the raw export stays in
+`data/raw/`, which is git-ignored and holds PHI):
 
 ```
-# raw export stays in data/raw/ (git-ignored, contains PHI)
 python scripts/run_daily.py "data/raw/External LAB AYANATI 16-27-aug-2026.xlsx"
+python scripts/run_daily.py "https://.../External LAB AYANATI 16-27-aug-2026.xlsx"
 ```
 
-`run_daily.py` de-identifies (`scripts/deidentify_ayenati.py` - MRN/ID
+A URL is downloaded into `data/raw/` first. Direct links, Google Drive
+`file/d/<id>/view` links, and SharePoint/OneDrive share links are handled
+(`scripts/fetch_export.py`); a link that needs a login returns an HTML page
+and is rejected - download it by hand and pass the path instead.
+
+`run_daily.py` then de-identifies (`scripts/deidentify_ayenati.py` - MRN/ID
 pseudonymised, patient names replaced, staff name stripped), runs the PHI
-guard (`scripts/check_no_phi.py`), and builds the report into `reports/<stem>/`.
-Then:
+guard (`scripts/check_no_phi.py`), and builds a preview into
+`preview/<stem>/` (git-ignored). Then:
 
 ```
 git add "data/incoming/<stem>.xlsx"

@@ -21,6 +21,7 @@ def _load(name):
 
 
 stats = _load("ayenati_external_stats")
+fetch = _load("fetch_export")
 deident = _load("deidentify_ayenati")
 guard = _load("check_no_phi")
 
@@ -68,6 +69,31 @@ def test_header_detection(tmp_path):
     raw = tmp_path / "raw.xlsx"
     _write_raw(raw)
     assert stats.detect_header_row(str(raw)) == 4
+
+
+def test_fetch_export_url_handling(tmp_path):
+    # local path passes straight through
+    raw = tmp_path / "raw.xlsx"
+    _write_raw(raw)
+    assert fetch.resolve_input(str(raw)) == raw
+
+    # share links are rewritten to direct-download form
+    assert fetch._normalise_share_url(
+        "https://drive.google.com/file/d/ABC/view?usp=sharing"
+    ) == "https://drive.google.com/uc?export=download&id=ABC"
+    assert fetch._normalise_share_url(
+        "https://x.sharepoint.com/:x:/g/personal/u/EAB?e=z"
+    ).endswith("&download=1")
+
+    # a file:// URL is downloaded and validated as a real xlsx
+    got = fetch.resolve_input(raw.as_uri(), dest_dir=tmp_path / "dl")
+    assert got.is_file() and got.read_bytes()[:4] == b"PK\x03\x04"
+
+    # HTML (a login wall) is rejected, not silently processed
+    page = tmp_path / "login.html"
+    page.write_text("<html><body>Sign in</body></html>")
+    with pytest.raises(ValueError):
+        fetch.resolve_input(page.as_uri(), dest_dir=tmp_path / "dl")
 
 
 def test_deidentify_then_guard_passes(tmp_path):

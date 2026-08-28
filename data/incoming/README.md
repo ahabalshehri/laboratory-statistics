@@ -16,16 +16,19 @@ Never put a raw export here. Raw exports contain patient names, national ID
 numbers and MRNs; keep them in `data/raw/` (git-ignored).
 
 ```
-# raw export stays local in data/raw/
-python scripts/deidentify_ayenati.py "data/raw/External LAB AYANATI <dates>.xlsx"
-#  -> writes data/incoming/External LAB AYANATI <dates>.xlsx  (pseudonymised)
+# one command - accepts a local path OR a download link
+python scripts/run_daily.py "data/raw/External LAB AYANATI <dates>.xlsx"
+python scripts/run_daily.py "https://.../External LAB AYANATI <dates>.xlsx"
 
-python scripts/check_no_phi.py "data/incoming/*.xlsx"   # must print OK
-
+# it de-identifies -> data/incoming/<stem>.xlsx, runs the PHI guard, and
+# builds a git-ignored preview/. Then:
 git add "data/incoming/External LAB AYANATI <dates>.xlsx"
 git commit -m "Ayenati export <dates>"
 git push
 ```
+
+(Or run the steps by hand: `deidentify_ayenati.py` also takes a path or a URL,
+then `check_no_phi.py "data/incoming/*.xlsx"` must print `OK`.)
 
 The CI workflow re-runs `check_no_phi.py` and **fails the run** if any file
 here still looks like it contains PHI, so a raw file can never be processed or
