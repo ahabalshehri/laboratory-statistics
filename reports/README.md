@@ -10,6 +10,15 @@ several formats. Regenerated on every push that touches `data/incoming/`.
 | `… .html` | ✅ | ✅ | One page, all tables, copy-to-Excel buttons |
 | `… .xlsx` | ❌ (too large) | ✅ | Analysts who need the raw sheets |
 
+## Where these are published
+
+- **GitHub Pages:** <https://ahabalshehri.github.io/laboratory-statistics/>
+  — a landing page (`index.html`, regenerated each run) linking every report's
+  live HTML view and its PDF. The PDF is served with the right type, so the
+  link downloads/opens it directly.
+- **GitHub Releases:** one per export, tag `report-<stem>`, all four files
+  attached — <https://github.com/ahabalshehri/laboratory-statistics/releases>.
+
 ## How to download a report
 
 ### The PDF (recommended for sharing)

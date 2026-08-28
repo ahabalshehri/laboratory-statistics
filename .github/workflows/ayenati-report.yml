@@ -121,6 +121,27 @@ jobs:
             git push
           fi
 
+      - name: Publish a GitHub Release per export
+        if: github.ref == 'refs/heads/master'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          while IFS= read -r f; do
+            [ -z "$f" ] && continue
+            stem="$(basename "${f%.xlsx}")"
+            dir="reports/$stem"
+            tag="report-$(echo "$stem" | tr '[:upper:] ' '[:lower:]-' | tr -cd 'a-z0-9-')"
+            title="$stem"
+            mapfile -t assets < <(find "$dir" -maxdepth 1 -type f \( -name '*.pdf' -o -name '*.xlsx' -o -name '*.html' -o -name '*.md' \))
+            if gh release view "$tag" >/dev/null 2>&1; then
+              gh release upload "$tag" "${assets[@]}" --clobber
+            else
+              gh release create "$tag" "${assets[@]}" --title "$title" \
+                --notes "Auto-published by the Ayenati daily report workflow. Live: https://ahabalshehri.github.io/laboratory-statistics/"
+            fi
+          done <<< "${{ steps.pick.outputs.files }}"
+
       - name: Configure GitHub Pages
         if: github.ref == 'refs/heads/master'
         uses: actions/configure-pages@v5

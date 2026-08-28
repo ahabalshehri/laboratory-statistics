@@ -53,11 +53,21 @@ git push
 ```
 
 Commit only the de-identified data file. The push triggers
-`.github/workflows/ayenati-report.yml`, which re-runs the
-PHI guard (**fails the run if any file in `data/incoming/` still contains
-patient data**), rebuilds three outputs, uploads them as the
-`ayenati-reports-<run>` artifact (30-day retention), and commits the Markdown
-and HTML back to `reports/`. Only de-identified data ever reaches GitHub.
+`.github/workflows/ayenati-report.yml`, which re-runs the PHI guard
+(**fails the run if any file in `data/incoming/` still contains patient
+data**), rebuilds every format, uploads them as the `ayenati-reports-<run>`
+artifact (30-day retention), commits them to `reports/`, **publishes
+`reports/` to GitHub Pages**, and **cuts a GitHub Release per export**. Only
+de-identified data ever reaches GitHub.
+
+### Where the reports are published
+
+- **Site:** <https://ahabalshehri.github.io/laboratory-statistics/> — landing
+  page listing every report; each links its live HTML view and PDF download.
+- **Releases:** <https://github.com/ahabalshehri/laboratory-statistics/releases>
+  — one per export (tag `report-<stem>`), with all four files attached.
+- **In the repo:** `reports/<stem>/` (PDF + HTML + MD; see
+  [reports/README.md](reports/README.md)). The `.xlsx` is artifact/Release only.
 
 Four report formats per run, all from the same numbers:
 
@@ -65,8 +75,8 @@ Four report formats per run, all from the same numbers:
 |---|---|
 | `… .xlsx` | 8 sheets (Dashboard, Test Wise, Test Status, Daily, PHC, Test-by-PHC, Data Quality, Clean Data) |
 | `… .md` | Full narrative report, renders on GitHub |
-| `… .html` | **One page with every table**, each with copy-to-Excel / copy-as-Markdown buttons — open locally or publish as a Claude artifact for a shareable link |
-| `… .pdf` | **Official, signable report** — hospital logo + letterhead, confidentiality statement, executive indicators, Prepared / Reviewed / Approved block, full test-wise appendices. For sharing with administration and health authorities. Uploaded as a workflow artifact (git-ignored locally). |
+| `… .html` | **One page with every table**, each with copy-to-Excel / copy-as-Markdown buttons; served live on the Pages site |
+| `… .pdf` | **Official, signable report** — hospital logo + letterhead, confidentiality statement, executive indicators, Prepared / Reviewed / Approved block, full test-wise appendices. For sharing with administration and health authorities. |
 
 Report internals: `scripts/ayenati_external_stats.py` - auto-detects the
 header row, filters to `Is external lab order = Yes` + received specimens,
