@@ -47,12 +47,13 @@ guard (`scripts/check_no_phi.py`), and builds the report into `reports/<stem>/`.
 Then:
 
 ```
-git add "data/incoming/<stem>.xlsx" "reports/<stem>"/*.md
+git add "data/incoming/<stem>.xlsx"
 git commit -m "Ayenati export <dates>"
 git push
 ```
 
-The push triggers `.github/workflows/ayenati-report.yml`, which re-runs the
+Commit only the de-identified data file. The push triggers
+`.github/workflows/ayenati-report.yml`, which re-runs the
 PHI guard (**fails the run if any file in `data/incoming/` still contains
 patient data**), rebuilds three outputs, uploads them as the
 `ayenati-reports-<run>` artifact (30-day retention), and commits the Markdown

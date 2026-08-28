@@ -38,9 +38,11 @@ def main() -> None:
     run(PY, str(HERE / "ayenati_external_stats.py"), str(incoming), str(report_dir))
 
     print("\n" + "=" * 60)
-    print("Local report ready in:", report_dir)
-    print("Publish it (push triggers the GitHub Actions artifact build):\n")
-    print(f'  git add "{incoming}" "{report_dir}"/*.md')
+    print("Local preview ready in:", report_dir)
+    print("(xlsx / md / html / pdf - review these, then publish the DATA file only)\n")
+    print("Commit just the de-identified export; GitHub Actions rebuilds and")
+    print("commits every report format so they stay byte-consistent:\n")
+    print(f'  git add "{incoming}"')
     print(f'  git commit -m "Ayenati export {stem}"')
     print("  git push")
 
