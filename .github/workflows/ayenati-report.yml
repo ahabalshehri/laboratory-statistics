@@ -109,7 +109,7 @@ jobs:
           if git diff --cached --quiet; then
             echo "No report changes to commit."
           else
-            git commit -m "Ayenati report (md + html): ${{ github.sha }} [skip ci]"
+            git commit -m "Ayenati report for ${{ github.sha }} [skip ci]"
             git pull --rebase --autostash
             git push
           fi

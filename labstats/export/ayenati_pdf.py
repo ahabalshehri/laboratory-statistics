@@ -12,9 +12,16 @@ Reuses the shared building blocks in labstats.export.pdf_export.
 from __future__ import annotations
 
 import io
+import re
 from datetime import datetime
 
-from reportlab.lib import colors
+import reportlab.rl_config
+
+# Deterministic output: no embedded production timestamp / random file id, so
+# regenerating an unchanged report yields a byte-identical PDF (no commit churn).
+reportlab.rl_config.invariant = 1
+
+from reportlab.lib import colors  # noqa: E402
 from reportlab.lib.pagesizes import A4
 from reportlab.lib.units import cm
 from reportlab.lib.styles import ParagraphStyle
@@ -311,4 +318,9 @@ def build_ayenati_pdf(
         canvasmaker=lambda *a, **kw: _NumberedCanvas(
             *a, header_footer_fn=_header_footer(hospital_name, ref, version, logo_path), **kw),
     )
-    return buffer.getvalue()
+    out_bytes = buffer.getvalue()
+    # Neutralise any residual timestamp reportlab still embeds, so an unchanged
+    # report regenerates byte-identically (no daily commit churn).
+    out_bytes = re.sub(rb"/(CreationDate|ModDate) \(D:[^)]*\)",
+                       rb"/\1 (D:20000101000000+00'00')", out_bytes)
+    return out_bytes
