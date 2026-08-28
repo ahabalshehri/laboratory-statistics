@@ -21,6 +21,8 @@ data/generated/*
 
 output/
 reports_out/
+# Local report previews from scripts/run_daily.py - CI builds the real reports/.
+preview/
 *.pdf
 # Official Ayenati PDF reports are aggregate-only (no PHI) - keep them in the
 # repo so they have a stable download URL. The large source workbook stays out.

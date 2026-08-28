@@ -1,10 +1,11 @@
-"""One command to turn a raw Ayenati export into a committable report.
+"""One command to turn a raw Ayenati export into a committable data file.
 
     python scripts/run_daily.py "data/raw/External LAB AYANATI <dates>.xlsx"
 
-Steps: de-identify -> PHI guard -> build workbook + Markdown report locally.
-Then it prints the git commands to publish (push triggers the CI workflow,
-which rebuilds the same reports and uploads them as an artifact).
+Steps: de-identify -> PHI guard -> build a local PREVIEW of every report format
+under preview/<stem>/ (git-ignored). You commit only the de-identified data
+file; GitHub Actions rebuilds the reports, commits them to reports/, publishes
+GitHub Pages, and cuts a Release.
 """
 from __future__ import annotations
 
@@ -31,20 +32,20 @@ def main() -> None:
 
     stem = raw.stem
     incoming = Path("data/incoming") / f"{stem}.xlsx"
-    report_dir = Path("reports") / stem
+    preview_dir = Path("preview") / stem
 
     run(PY, str(HERE / "deidentify_ayenati.py"), str(raw), str(incoming))
     run(PY, str(HERE / "check_no_phi.py"), str(incoming))
-    run(PY, str(HERE / "ayenati_external_stats.py"), str(incoming), str(report_dir))
+    run(PY, str(HERE / "ayenati_external_stats.py"), str(incoming), str(preview_dir))
 
     print("\n" + "=" * 60)
-    print("Local preview ready in:", report_dir)
-    print("(xlsx / md / html / pdf - review these, then publish the DATA file only)\n")
-    print("Commit just the de-identified export; GitHub Actions rebuilds and")
-    print("commits every report format so they stay byte-consistent:\n")
+    print("Local preview (git-ignored) ready in:", preview_dir)
+    print("Open the .html / .pdf to review, then publish the DATA file only:\n")
     print(f'  git add "{incoming}"')
     print(f'  git commit -m "Ayenati export {stem}"')
     print("  git push")
+    print("\nGitHub Actions then rebuilds reports/, updates the Pages site")
+    print("(https://ahabalshehri.github.io/laboratory-statistics/), and cuts a Release.")
 
 
 if __name__ == "__main__":

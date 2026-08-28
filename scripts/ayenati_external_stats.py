@@ -547,7 +547,10 @@ def main() -> None:
             rel = f"{folder.name}/{match.name}".replace(" ", "%20")
             return f"[{ext[1:].upper()}]({rel})"
 
-        for folder in sorted((p for p in reports_root.iterdir() if p.is_dir()), reverse=True):
+        from ayenati_report_page import report_sort_key  # noqa: E402
+        ordered = sorted((p for p in reports_root.iterdir() if p.is_dir()),
+                         key=lambda p: report_sort_key(p.name), reverse=True)
+        for folder in ordered:
             mark = " (latest)" if folder.name == current_folder else ""
             lines.append(f"| {folder.name}{mark} | {_idx_link(folder, '.pdf')} | "
                          f"{_idx_link(folder, '.md')} | {_idx_link(folder, '.html')} |")

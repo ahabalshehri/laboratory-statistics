@@ -269,6 +269,22 @@ def _document(title: str, css: str, body: str, extra_head: str = "") -> str:
 """
 
 
+_MONTHS = {m: i for i, m in enumerate(
+    ["jan", "feb", "mar", "apr", "may", "jun", "jul", "aug", "sep", "oct", "nov", "dec"], 1)}
+
+
+def report_sort_key(name: str) -> tuple:
+    """Newest-first sort key from a folder name whose tail looks like
+    '16-27-aug-2026' / '28-aug-2026' / '5-aug-2026'. Falls back to the raw
+    name so ordering is always deterministic."""
+    import re
+    m = re.search(r"(\d{1,2})(?:-\d{1,2})?-([a-z]{3,})-(\d{4})\s*$", name.lower())
+    if m:
+        day, mon, year = int(m.group(1)), _MONTHS.get(m.group(2)[:3], 0), int(m.group(3))
+        return (1, year, mon, day, name)
+    return (0, 0, 0, 0, name)
+
+
 def build_index(reports_root: Path, hospital: str, logo_path: str | None = None) -> str:
     """Landing page for GitHub Pages: lists every published report folder with
     links to its live HTML view and its downloadable PDF / Markdown."""
@@ -277,7 +293,8 @@ def build_index(reports_root: Path, hospital: str, logo_path: str | None = None)
     generated = datetime.date.today().strftime("%d %b %Y")
 
     rows = []
-    folders = sorted((p for p in reports_root.iterdir() if p.is_dir()), reverse=True)
+    folders = sorted((p for p in reports_root.iterdir() if p.is_dir()),
+                     key=lambda p: report_sort_key(p.name), reverse=True)
     for folder in folders:
         def find(ext):
             m = next(folder.glob(f"*{ext}"), None)
