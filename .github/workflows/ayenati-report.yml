@@ -1,15 +1,17 @@
 name: Ayenati daily report
 
 # Drop a DE-IDENTIFIED "External LAB AYANATI" export into data/incoming/ and push.
-# This workflow builds the test-wise statistics workbook + Markdown report,
-# uploads them as a downloadable artifact, and commits the Markdown into reports/.
+# This workflow builds the report in every format, uploads them as a downloadable
+# artifact, commits them into reports/, and publishes reports/ to GitHub Pages.
 
 on:
   push:
     paths:
       - "data/incoming/**"
       - "scripts/ayenati_external_stats.py"
+      - "scripts/ayenati_report_page.py"
       - "scripts/check_no_phi.py"
+      - "labstats/export/**"
       - ".github/workflows/ayenati-report.yml"
   workflow_dispatch:
     inputs:
@@ -24,10 +26,15 @@ concurrency:
 
 permissions:
   contents: write
+  pages: write
+  id-token: write
 
 jobs:
   report:
     runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy.outputs.page_url }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -99,7 +106,7 @@ jobs:
           if-no-files-found: error
           retention-days: 30
 
-      - name: Commit Markdown reports back to the repo
+      - name: Commit reports back to the repo
         if: github.event_name == 'push'
         run: |
           set -euo pipefail
@@ -113,3 +120,20 @@ jobs:
             git pull --rebase --autostash
             git push
           fi
+
+      - name: Configure GitHub Pages
+        if: github.ref == 'refs/heads/master'
+        uses: actions/configure-pages@v5
+        with:
+          enablement: true
+
+      - name: Upload reports/ as the Pages artifact
+        if: github.ref == 'refs/heads/master'
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: reports
+
+      - name: Deploy to GitHub Pages
+        id: deploy
+        if: github.ref == 'refs/heads/master'
+        uses: actions/deploy-pages@v4

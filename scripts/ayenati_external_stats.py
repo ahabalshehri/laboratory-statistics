@@ -553,6 +553,10 @@ def main() -> None:
                          f"{_idx_link(folder, '.md')} | {_idx_link(folder, '.html')} |")
         (reports_root / "INDEX.md").write_text("\n".join(lines) + "\n", encoding="utf-8")
 
+        from ayenati_report_page import build_index  # noqa: E402
+        (reports_root / "index.html").write_text(
+            build_index(reports_root, hosp, logo), encoding="utf-8")
+
     # ================= console summary =================
     print(f"\nWorkbook written: {out}\n")
     print("=== SUMMARY ===")
