@@ -98,6 +98,11 @@ def test_stats_applies_external_and_received_filters(tmp_path, capsys, monkeypat
 
     wb = report_dir / "raw - Ayenati Test-Wise Statistics.xlsx"
     assert wb.is_file()
+
+    page = (report_dir / "raw - Ayenati Test-Wise Statistics.html").read_text(encoding="utf-8")
+    assert "<title>Ayenati Test-Wise Statistics</title>" in page
+    assert 'id="test-wise"' in page and "copy-btn" in page
+    assert "HBA1C" in page
     tw = pd.read_excel(wb, sheet_name="Test Wise Statistics", header=1)
     total = tw[tw["Test Name"] == "TOTAL"].iloc[0]
     # received only: 2x HBA1C + 1x CBC = 3 ; TSH(pending/rejected), Creatinine(reception) excluded

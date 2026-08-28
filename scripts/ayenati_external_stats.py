@@ -466,6 +466,24 @@ def main() -> None:
            f"6. **Data-quality issues:** " + " ".join(notes), ""]
     md_path.write_text("\n".join(md), encoding="utf-8")
 
+    # ================= single-page HTML report =================
+    sys.path.insert(0, str(Path(__file__).resolve().parent))
+    from ayenati_report_page import build_page  # noqa: E402
+
+    funnel = [("Received", n_received, "received"),
+              ("Pending", n_pending, "pending"),
+              ("Received by receptionist only", n_reception_only, "reception"),
+              ("Rejected", n_rejected, "rejected")]
+    html_path = Path(out).with_suffix(".html")
+    html_path.write_text(build_page({
+        "hospital": hosp, "source_name": Path(src).name, "period": period or "all dates",
+        "kpis": kpis, "tw_out": tw_out, "status_tab": status_tab,
+        "daily": daily, "day_stats": day_stats,
+        "phc_stats": phc_stats, "phc_note": phc_note,
+        "dq_df": dq_df, "notes": notes, "funnel": funnel,
+        "verified": verified, "pct_sum": pct_sum,
+    }), encoding="utf-8")
+
     # ================= console summary =================
     print(f"\nWorkbook written: {out}\n")
     print("=== SUMMARY ===")

@@ -54,9 +54,17 @@ git push
 
 The push triggers `.github/workflows/ayenati-report.yml`, which re-runs the
 PHI guard (**fails the run if any file in `data/incoming/` still contains
-patient data**), rebuilds the workbook + Markdown, uploads them as the
+patient data**), rebuilds three outputs, uploads them as the
 `ayenati-reports-<run>` artifact (30-day retention), and commits the Markdown
-back to `reports/`. Only de-identified data ever reaches GitHub.
+and HTML back to `reports/`. Only de-identified data ever reaches GitHub.
+
+Three report formats per run, all from the same numbers:
+
+| File | Use |
+|---|---|
+| `… .xlsx` | 8 sheets (Dashboard, Test Wise, Test Status, Daily, PHC, Test-by-PHC, Data Quality, Clean Data) |
+| `… .md` | Full narrative report, renders on GitHub |
+| `… .html` | **One page with every table**, each with copy-to-Excel / copy-as-Markdown buttons — open locally or publish as a Claude artifact for a shareable link |
 
 Report internals: `scripts/ayenati_external_stats.py` - auto-detects the
 header row, filters to `Is external lab order = Yes` + received specimens,

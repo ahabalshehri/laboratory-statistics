@@ -1,0 +1,246 @@
+<title>Ayenati Test-Wise Statistics</title>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap">
+<style>
+:root{
+  --paper:#f5f7f9; --surface:#ffffff; --ink:#141d26; --muted:#5a6675;
+  --line:#e3e8ed; --line-strong:#cfd6de;
+  --accent:#0d6d88; --accent-ink:#0a5568; --accent-soft:#e4eff2;
+  --good:#2f7d4f; --warn:#a86a12; --crit:#b23a1e; --hold:#8a94a0;
+  --shadow:0 1px 2px rgba(20,29,38,.06),0 8px 24px -12px rgba(20,29,38,.14);
+  --radius:10px;
+}
+:root:not([data-theme="light"]){ @media (prefers-color-scheme:dark){
+  --paper:#0d141b; --surface:#141f29; --ink:#e8edf2; --muted:#9aa7b4;
+  --line:#233140; --line-strong:#32424f;
+  --accent:#3fb6d3; --accent-ink:#7fd0e4; --accent-soft:#16323c;
+  --good:#5cc88a; --warn:#e0b062; --crit:#eb8163; --hold:#7c8794;
+  --shadow:0 1px 2px rgba(0,0,0,.4),0 10px 30px -14px rgba(0,0,0,.6);
+}}
+:root[data-theme="dark"]{
+  --paper:#0d141b; --surface:#141f29; --ink:#e8edf2; --muted:#9aa7b4;
+  --line:#233140; --line-strong:#32424f;
+  --accent:#3fb6d3; --accent-ink:#7fd0e4; --accent-soft:#16323c;
+  --good:#5cc88a; --warn:#e0b062; --crit:#eb8163; --hold:#7c8794;
+  --shadow:0 1px 2px rgba(0,0,0,.4),0 10px 30px -14px rgba(0,0,0,.6);
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--paper);color:var(--ink);
+  font-family:"IBM Plex Sans",system-ui,-apple-system,Segoe UI,Roboto,sans-serif;
+  line-height:1.55;-webkit-font-smoothing:antialiased}
+.page{max-width:1080px;margin:0 auto;padding:clamp(1.5rem,4vw,3.5rem) clamp(1rem,3vw,2rem) 4rem}
+code{font-family:"IBM Plex Mono",ui-monospace,SFMono-Regular,Menlo,monospace;
+  font-size:.88em;background:var(--accent-soft);color:var(--accent-ink);
+  padding:.08em .38em;border-radius:4px}
+.eyebrow{font-family:"IBM Plex Mono",monospace;text-transform:uppercase;
+  letter-spacing:.14em;font-size:.7rem;font-weight:600;color:var(--accent-ink);margin:0 0 .5rem}
+header{border-bottom:1px solid var(--line);padding-bottom:1.8rem;margin-bottom:2rem}
+h1{font-size:clamp(1.8rem,4.5vw,2.7rem);font-weight:700;letter-spacing:-.02em;
+  margin:.1rem 0 .6rem;text-wrap:balance}
+.lede{font-size:1.02rem;color:var(--ink);margin:.2rem 0 .8rem}
+.filters{font-size:.9rem;color:var(--muted);margin:0;max-width:65ch}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:1px;
+  background:var(--line);border:1px solid var(--line);border-radius:var(--radius);
+  overflow:hidden;margin-bottom:1.5rem}
+.kpi{background:var(--surface);padding:1.1rem 1.15rem}
+.kpi-v{font-family:"IBM Plex Mono",monospace;font-size:1.7rem;font-weight:600;
+  letter-spacing:-.02em;font-variant-numeric:tabular-nums;color:var(--accent-ink)}
+.kpi-k{font-weight:600;font-size:.92rem;margin-top:.15rem}
+.kpi-sub{font-size:.78rem;color:var(--muted)}
+.funnel{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);
+  padding:1.1rem 1.2rem;margin-bottom:2.5rem;box-shadow:var(--shadow)}
+.fn-bar{display:flex;height:22px;border-radius:5px;overflow:hidden;background:var(--line)}
+.fn-seg{display:block;height:100%}
+.fn-received{background:var(--accent)} .fn-pending{background:var(--hold)}
+.fn-reception{background:var(--warn)} .fn-rejected{background:var(--crit)}
+.fn-legend{display:flex;flex-wrap:wrap;gap:.4rem 1.3rem;margin-top:.7rem;font-size:.82rem;color:var(--muted)}
+.fn-key{display:inline-flex;align-items:center;gap:.4rem}
+.fn-key b{color:var(--ink);font-variant-numeric:tabular-nums}
+.fn-dot{width:10px;height:10px;border-radius:3px;display:inline-block}
+.toc{position:sticky;top:0;z-index:5;display:flex;flex-wrap:wrap;gap:.3rem;
+  background:color-mix(in srgb,var(--paper) 88%,transparent);backdrop-filter:blur(8px);
+  padding:.6rem 0;margin-bottom:1rem;border-bottom:1px solid var(--line)}
+.toc a{font-family:"IBM Plex Mono",monospace;font-size:.76rem;text-decoration:none;
+  color:var(--muted);padding:.3rem .6rem;border-radius:6px;text-transform:uppercase;letter-spacing:.06em}
+.toc a:hover{background:var(--accent-soft);color:var(--accent-ink)}
+section{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);
+  padding:1.5rem clamp(1rem,2.5vw,1.7rem);margin-bottom:1.5rem;box-shadow:var(--shadow)}
+.sec-head{display:flex;justify-content:space-between;align-items:flex-start;gap:1rem;
+  flex-wrap:wrap;margin-bottom:1.1rem}
+.sec-head h2{font-size:1.3rem;font-weight:700;letter-spacing:-.01em;margin:.15rem 0 .3rem}
+.use-for{font-size:.88rem;color:var(--muted);margin:0;max-width:60ch}
+.copy-group{display:flex;gap:.4rem;flex-shrink:0}
+.copy-btn{font-family:"IBM Plex Mono",monospace;font-size:.74rem;font-weight:500;
+  cursor:pointer;border:1px solid var(--line-strong);background:var(--surface);
+  color:var(--ink);padding:.4rem .7rem;border-radius:6px;transition:background .12s,border-color .12s}
+.copy-btn:hover{background:var(--accent-soft);border-color:var(--accent);color:var(--accent-ink)}
+.copy-btn:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.tablewrap{overflow-x:auto;border:1px solid var(--line);border-radius:8px}
+table{border-collapse:collapse;width:100%;font-size:.86rem}
+thead th{background:var(--accent-soft);color:var(--accent-ink);font-weight:600;
+  text-align:left;padding:.55rem .8rem;white-space:nowrap;position:sticky;top:0}
+td{padding:.5rem .8rem;border-top:1px solid var(--line)}
+th.num,td.num{text-align:right;font-family:"IBM Plex Mono",monospace;
+  font-variant-numeric:tabular-nums;white-space:nowrap}
+tbody tr:hover{background:var(--accent-soft)}
+tr.total td{font-weight:700;border-top:2px solid var(--line-strong);background:var(--paper)}
+.chart{margin-bottom:1.2rem}
+.chart h3,.stat-list+*{margin:0 0 .7rem}
+.chart h3{font-size:.8rem;text-transform:uppercase;letter-spacing:.1em;color:var(--muted);font-weight:600}
+.bars{display:flex;flex-direction:column;gap:.3rem}
+.bar{display:grid;grid-template-columns:minmax(90px,26%) 1fr auto;align-items:center;gap:.7rem;font-size:.8rem}
+.bar-l{color:var(--ink);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.bar-track{background:var(--line);border-radius:4px;height:12px;overflow:hidden}
+.bar-fill{display:block;height:100%;background:var(--accent);border-radius:4px}
+.bar-v{font-family:"IBM Plex Mono",monospace;font-variant-numeric:tabular-nums;color:var(--muted)}
+.stat-list{list-style:none;padding:0;margin:1rem 0 0;display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:.5rem}
+.stat-list li{display:flex;justify-content:space-between;gap:1rem;background:var(--paper);
+  border:1px solid var(--line);border-radius:7px;padding:.5rem .75rem;font-size:.82rem}
+.stat-list b{font-family:"IBM Plex Mono",monospace;font-variant-numeric:tabular-nums}
+.notes{margin:0;padding-left:1.2rem;font-size:.86rem;color:var(--muted);display:flex;flex-direction:column;gap:.35rem}
+footer{margin-top:2.5rem;padding-top:1.4rem;border-top:1px solid var(--line);
+  font-size:.82rem;color:var(--muted);max-width:70ch}
+#toast{position:fixed;left:50%;bottom:2rem;transform:translateX(-50%) translateY(12px);
+  background:var(--ink);color:var(--paper);padding:.6rem 1.1rem;border-radius:8px;
+  font-size:.85rem;font-weight:500;opacity:0;pointer-events:none;transition:opacity .2s,transform .2s;z-index:20}
+#toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+@media print{.toc,.copy-group,#toast{display:none}section{box-shadow:none;break-inside:avoid}
+  body{background:#fff}}
+</style>
+<div class="page">
+  <header>
+    <p class="eyebrow">External / Ayenati laboratory workload</p>
+    <h1>Ayenati Test-Wise Statistics</h1>
+    <p class="lede">Al-Majardah General Hospital &nbsp;&middot;&nbsp; 2026-08-16 to 2026-08-27
+      &nbsp;&middot;&nbsp; source <code>External LAB AYANATI 16-27-aug-2026.xlsx</code></p>
+    <p class="filters">Filters: <code>Is external lab order = Yes</code> &nbsp;<b>and</b>&nbsp;
+      specimen received by the laboratory. Counting unit: one <b>test</b> per record,
+      grouped by cleaned <code>Test description</code>.</p>
+  </header>
+
+  <div class="kpis"><div class="kpi"><div class="kpi-v">28,431</div><div class="kpi-k">Tests received</div><div class="kpi-sub">individual analytical tests</div></div><div class="kpi"><div class="kpi-v">8,837</div><div class="kpi-k">Samples received</div><div class="kpi-sub">distinct sample barcodes</div></div><div class="kpi"><div class="kpi-v">3,210</div><div class="kpi-k">Patients</div><div class="kpi-sub">distinct MRN</div></div><div class="kpi"><div class="kpi-v">3,435</div><div class="kpi-k">Orders</div><div class="kpi-sub">distinct order numbers</div></div><div class="kpi"><div class="kpi-v">56</div><div class="kpi-k">Test types</div><div class="kpi-sub">distinct test names</div></div></div>
+
+  <div class="funnel">
+    <div class="fn-bar"><span class="fn-seg fn-received" style="width:73.53%" title="Received: 28,431"></span><span class="fn-seg fn-pending" style="width:22.17%" title="Pending: 8,574"></span><span class="fn-seg fn-reception" style="width:3.79%" title="Received by receptionist only: 1,465"></span><span class="fn-seg fn-rejected" style="width:0.51%" title="Rejected: 197"></span></div>
+    <div class="fn-legend"><span class="fn-key"><span class="fn-dot fn-received"></span>Received &nbsp;<b>28,431</b></span><span class="fn-key"><span class="fn-dot fn-pending"></span>Pending &nbsp;<b>8,574</b></span><span class="fn-key"><span class="fn-dot fn-reception"></span>Received by receptionist only &nbsp;<b>1,465</b></span><span class="fn-key"><span class="fn-dot fn-rejected"></span>Rejected &nbsp;<b>197</b></span></div>
+  </div>
+
+  <nav class="toc"><a href="#test-wise">Test-wise</a><a href="#status">Status</a><a href="#daily">Daily</a><a href="#phc">PHC</a><a href="#quality">Data quality</a></nav>
+
+  
+<section id="test-wise">
+  <div class="sec-head">
+    <div><span class="eyebrow">01</span><h2>Test-Wise Statistics</h2>
+      <p class="use-for">The core workload table &mdash; test counts, share of total, and the samples / patients behind each test.</p></div>
+    <div class="copy-group">
+      <button class="copy-btn" data-target="test-wise" data-format="tsv">Copy for Excel</button>
+      <button class="copy-btn" data-target="test-wise" data-format="md">Copy as Markdown</button>
+    </div>
+  </div>
+  <div class="chart"><h3>Top 15 by volume</h3><div class="bars"><div class="bar"><span class="bar-l">CBC &amp; Auto Differential</span><span class="bar-track"><span class="bar-fill" style="width:100.0%"></span></span><span class="bar-v">2,227</span></div><div class="bar"><span class="bar-l">Cholesterol</span><span class="bar-track"><span class="bar-fill" style="width:73.0%"></span></span><span class="bar-v">1,625</span></div><div class="bar"><span class="bar-l">Creatinine</span><span class="bar-track"><span class="bar-fill" style="width:70.7%"></span></span><span class="bar-v">1,575</span></div><div class="bar"><span class="bar-l">LDL</span><span class="bar-track"><span class="bar-fill" style="width:70.5%"></span></span><span class="bar-v">1,571</span></div><div class="bar"><span class="bar-l">HDL</span><span class="bar-track"><span class="bar-fill" style="width:70.2%"></span></span><span class="bar-v">1,563</span></div><div class="bar"><span class="bar-l">TRIGLYCERIDES TG</span><span class="bar-track"><span class="bar-fill" style="width:70.1%"></span></span><span class="bar-v">1,562</span></div><div class="bar"><span class="bar-l">HBA1C</span><span class="bar-track"><span class="bar-fill" style="width:67.9%"></span></span><span class="bar-v">1,512</span></div><div class="bar"><span class="bar-l">Iron</span><span class="bar-track"><span class="bar-fill" style="width:62.4%"></span></span><span class="bar-v">1,389</span></div><div class="bar"><span class="bar-l">TSH</span><span class="bar-track"><span class="bar-fill" style="width:62.1%"></span></span><span class="bar-v">1,382</span></div><div class="bar"><span class="bar-l">Glucose (Fasting)</span><span class="bar-track"><span class="bar-fill" style="width:60.3%"></span></span><span class="bar-v">1,343</span></div><div class="bar"><span class="bar-l">Aspartate Aminotransferase</span><span class="bar-track"><span class="bar-fill" style="width:59.3%"></span></span><span class="bar-v">1,320</span></div><div class="bar"><span class="bar-l">Vitamin D+Metabolites</span><span class="bar-track"><span class="bar-fill" style="width:56.8%"></span></span><span class="bar-v">1,266</span></div><div class="bar"><span class="bar-l">Urea</span><span class="bar-track"><span class="bar-fill" style="width:56.2%"></span></span><span class="bar-v">1,252</span></div><div class="bar"><span class="bar-l">Calcium in Serum or Plasma</span><span class="bar-track"><span class="bar-fill" style="width:53.8%"></span></span><span class="bar-v">1,199</span></div><div class="bar"><span class="bar-l">ALANINE AMINO TRANSFERASE</span><span class="bar-track"><span class="bar-fill" style="width:49.7%"></span></span><span class="bar-v">1,107</span></div></div></div>
+  <div class="tablewrap"><table id="test-wise"><thead><tr><th class="">Rank</th><th class="">Test Name</th><th class="num">Test Count</th><th class="num">% of Total Tests</th><th class="num">Unique Samples</th><th class="num">Unique Patients</th></tr></thead><tbody><tr><td class="">1</td><td class="">CBC &amp; Auto Differential</td><td class="num">2,227</td><td class="num">7.83</td><td class="num">2,227</td><td class="num">2,225</td></tr><tr><td class="">2</td><td class="">Cholesterol</td><td class="num">1,625</td><td class="num">5.72</td><td class="num">1,625</td><td class="num">1,618</td></tr><tr><td class="">3</td><td class="">Creatinine</td><td class="num">1,575</td><td class="num">5.54</td><td class="num">1,575</td><td class="num">1,570</td></tr><tr><td class="">4</td><td class="">LDL</td><td class="num">1,571</td><td class="num">5.53</td><td class="num">1,571</td><td class="num">1,565</td></tr><tr><td class="">5</td><td class="">HDL</td><td class="num">1,563</td><td class="num">5.50</td><td class="num">1,563</td><td class="num">1,558</td></tr><tr><td class="">6</td><td class="">TRIGLYCERIDES TG</td><td class="num">1,562</td><td class="num">5.49</td><td class="num">1,562</td><td class="num">1,555</td></tr><tr><td class="">7</td><td class="">HBA1C</td><td class="num">1,512</td><td class="num">5.32</td><td class="num">1,512</td><td class="num">1,511</td></tr><tr><td class="">8</td><td class="">Iron</td><td class="num">1,389</td><td class="num">4.89</td><td class="num">1,389</td><td class="num">1,388</td></tr><tr><td class="">9</td><td class="">TSH</td><td class="num">1,382</td><td class="num">4.86</td><td class="num">1,382</td><td class="num">1,377</td></tr><tr><td class="">10</td><td class="">Glucose (Fasting)</td><td class="num">1,343</td><td class="num">4.72</td><td class="num">1,343</td><td class="num">1,341</td></tr><tr><td class="">11</td><td class="">Aspartate Aminotransferase</td><td class="num">1,320</td><td class="num">4.64</td><td class="num">1,320</td><td class="num">1,316</td></tr><tr><td class="">12</td><td class="">Vitamin D+Metabolites</td><td class="num">1,266</td><td class="num">4.45</td><td class="num">1,266</td><td class="num">1,262</td></tr><tr><td class="">13</td><td class="">Urea</td><td class="num">1,252</td><td class="num">4.40</td><td class="num">1,252</td><td class="num">1,248</td></tr><tr><td class="">14</td><td class="">Calcium in Serum or Plasma</td><td class="num">1,199</td><td class="num">4.22</td><td class="num">1,199</td><td class="num">1,198</td></tr><tr><td class="">15</td><td class="">ALANINE AMINO TRANSFERASE</td><td class="num">1,107</td><td class="num">3.89</td><td class="num">1,107</td><td class="num">1,105</td></tr><tr><td class="">16</td><td class="">Uric acid in Serum or Plasma</td><td class="num">1,073</td><td class="num">3.77</td><td class="num">1,073</td><td class="num">1,071</td></tr><tr><td class="">17</td><td class="">Vit-B12</td><td class="num">849</td><td class="num">2.99</td><td class="num">849</td><td class="num">846</td></tr><tr><td class="">18</td><td class="">T3</td><td class="num">705</td><td class="num">2.48</td><td class="num">705</td><td class="num">705</td></tr><tr><td class="">19</td><td class="">Alkaline Phosphatase ALP</td><td class="num">659</td><td class="num">2.32</td><td class="num">659</td><td class="num">658</td></tr><tr><td class="">20</td><td class="">Urine Analysis</td><td class="num">370</td><td class="num">1.30</td><td class="num">370</td><td class="num">367</td></tr><tr><td class="">21</td><td class="">Albumin in Serum or Plasma</td><td class="num">357</td><td class="num">1.26</td><td class="num">357</td><td class="num">357</td></tr><tr><td class="">22</td><td class="">Magnesium in Serum or Plasma</td><td class="num">323</td><td class="num">1.14</td><td class="num">323</td><td class="num">323</td></tr><tr><td class="">23</td><td class="">Total Bilirubin</td><td class="num">284</td><td class="num">1</td><td class="num">284</td><td class="num">284</td></tr><tr><td class="">24</td><td class="">Potassium in Serum or Plasma</td><td class="num">275</td><td class="num">0.97</td><td class="num">275</td><td class="num">274</td></tr><tr><td class="">25</td><td class="">Bilirubin.direct in Serum or Plasma</td><td class="num">264</td><td class="num">0.93</td><td class="num">264</td><td class="num">264</td></tr><tr><td class="">26</td><td class="">Sodium - Serum or Plasma</td><td class="num">214</td><td class="num">0.75</td><td class="num">214</td><td class="num">214</td></tr><tr><td class="">27</td><td class="">T4</td><td class="num">202</td><td class="num">0.71</td><td class="num">202</td><td class="num">202</td></tr><tr><td class="">28</td><td class="">Amylase in Serum or Plasma</td><td class="num">160</td><td class="num">0.56</td><td class="num">160</td><td class="num">160</td></tr><tr><td class="">29</td><td class="">Gamma Glutamyl Transferase</td><td class="num">156</td><td class="num">0.55</td><td class="num">156</td><td class="num">156</td></tr><tr><td class="">30</td><td class="">Total Protein</td><td class="num">116</td><td class="num">0.41</td><td class="num">116</td><td class="num">116</td></tr><tr><td class="">31</td><td class="">Hepatitis C Antibody</td><td class="num">80</td><td class="num">0.28</td><td class="num">80</td><td class="num">80</td></tr><tr><td class="">32</td><td class="">Hepatitis B S Antigen</td><td class="num">76</td><td class="num">0.27</td><td class="num">76</td><td class="num">76</td></tr><tr><td class="">33</td><td class="">Anti-HIV1&amp; 2 Screening</td><td class="num">64</td><td class="num">0.23</td><td class="num">64</td><td class="num">64</td></tr><tr><td class="">34</td><td class="">Blood Group</td><td class="num">37</td><td class="num">0.13</td><td class="num">37</td><td class="num">37</td></tr><tr><td class="">35</td><td class="">Chloride</td><td class="num">35</td><td class="num">0.12</td><td class="num">35</td><td class="num">35</td></tr><tr><td class="">36</td><td class="">Hepatitis B Anti Surface antibody</td><td class="num">35</td><td class="num">0.12</td><td class="num">35</td><td class="num">35</td></tr><tr><td class="">37</td><td class="">Pregnancy Test Urine</td><td class="num">27</td><td class="num">0.09</td><td class="num">27</td><td class="num">27</td></tr><tr><td class="">38</td><td class="">Phosphate in Serum or Plasma</td><td class="num">25</td><td class="num">0.09</td><td class="num">25</td><td class="num">25</td></tr><tr><td class="">39</td><td class="">Beta-HCG</td><td class="num">23</td><td class="num">0.08</td><td class="num">23</td><td class="num">21</td></tr><tr><td class="">40</td><td class="">Hepatitis B Anti core Total</td><td class="num">21</td><td class="num">0.07</td><td class="num">21</td><td class="num">21</td></tr><tr><td class="">41</td><td class="">C Reactive Protein</td><td class="num">19</td><td class="num">0.07</td><td class="num">19</td><td class="num">19</td></tr><tr><td class="">42</td><td class="">MALARIA TEST</td><td class="num">18</td><td class="num">0.06</td><td class="num">18</td><td class="num">18</td></tr><tr><td class="">43</td><td class="">Creatine Kinase</td><td class="num">17</td><td class="num">0.06</td><td class="num">17</td><td class="num">17</td></tr><tr><td class="">44</td><td class="">Prolactin</td><td class="num">14</td><td class="num">0.05</td><td class="num">14</td><td class="num">14</td></tr><tr><td class="">45</td><td class="">Rheumatoid Factor</td><td class="num">11</td><td class="num">0.04</td><td class="num">11</td><td class="num">11</td></tr><tr><td class="">46</td><td class="">Follicle Stimulating Hormone [FSH] antigen</td><td class="num">7</td><td class="num">0.02</td><td class="num">7</td><td class="num">7</td></tr><tr><td class="">47</td><td class="">LH</td><td class="num">6</td><td class="num">0.02</td><td class="num">6</td><td class="num">6</td></tr><tr><td class="">48</td><td class="">Glucose in Serum or Plasma</td><td class="num">3</td><td class="num">0.01</td><td class="num">3</td><td class="num">3</td></tr><tr><td class="">49</td><td class="">Testosterone</td><td class="num">3</td><td class="num">0.01</td><td class="num">3</td><td class="num">3</td></tr><tr><td class="">50</td><td class="">Brucella</td><td class="num">2</td><td class="num">0.01</td><td class="num">2</td><td class="num">2</td></tr><tr><td class="">51</td><td class="">PSA</td><td class="num">2</td><td class="num">0.01</td><td class="num">2</td><td class="num">2</td></tr><tr><td class="">52</td><td class="">Toxoplasma IgG</td><td class="num">2</td><td class="num">0.01</td><td class="num">2</td><td class="num">2</td></tr><tr><td class="">53</td><td class="">Progesterone</td><td class="num">1</td><td class="num">0</td><td class="num">1</td><td class="num">1</td></tr><tr><td class="">54</td><td class="">Stool Analysis</td><td class="num">1</td><td class="num">0</td><td class="num">1</td><td class="num">1</td></tr><tr><td class="">55</td><td class="">Stool Culture</td><td class="num">1</td><td class="num">0</td><td class="num">1</td><td class="num">1</td></tr><tr><td class="">56</td><td class="">Toxoplasma IgM</td><td class="num">1</td><td class="num">0</td><td class="num">1</td><td class="num">1</td></tr><tr class="total"><td class=""></td><td class="">TOTAL</td><td class="num">28,431</td><td class="num">99.99</td><td class="num">8,837</td><td class="num">3,210</td></tr></tbody></table></div>
+</section>
+<section id="status">
+  <div class="sec-head">
+    <div><span class="eyebrow">02</span><h2>Test Status</h2>
+      <p class="use-for">Where each test stands in the LIS pipeline &mdash; ordered, resulted, verified L1 / L2.</p></div>
+    <div class="copy-group">
+      <button class="copy-btn" data-target="status" data-format="tsv">Copy for Excel</button>
+      <button class="copy-btn" data-target="status" data-format="md">Copy as Markdown</button>
+    </div>
+  </div>
+  <p class="use-for">Verified (L1 + L2) = 25,731 of 28,431 received (90.5%).</p>
+  <div class="tablewrap"><table id="status"><thead><tr><th class="">Test Name</th><th class="num">Total</th><th class="num">Ordered</th><th class="num">Resulted</th><th class="num">Verified L1</th><th class="num">Verified L2</th></tr></thead><tbody><tr><td class="">CBC &amp; Auto Differential</td><td class="num">2,227</td><td class="num">73</td><td class="num">98</td><td class="num">5</td><td class="num">2,051</td></tr><tr><td class="">Cholesterol</td><td class="num">1,625</td><td class="num">38</td><td class="num">65</td><td class="num">1,121</td><td class="num">401</td></tr><tr><td class="">Creatinine</td><td class="num">1,575</td><td class="num">43</td><td class="num">12</td><td class="num">195</td><td class="num">1,325</td></tr><tr><td class="">LDL</td><td class="num">1,571</td><td class="num">95</td><td class="num">47</td><td class="num">821</td><td class="num">608</td></tr><tr><td class="">HDL</td><td class="num">1,563</td><td class="num">38</td><td class="num">31</td><td class="num">640</td><td class="num">854</td></tr><tr><td class="">TRIGLYCERIDES TG</td><td class="num">1,562</td><td class="num">39</td><td class="num">16</td><td class="num">511</td><td class="num">996</td></tr><tr><td class="">HBA1C</td><td class="num">1,512</td><td class="num">69</td><td class="num">32</td><td class="num">594</td><td class="num">817</td></tr><tr><td class="">Iron</td><td class="num">1,389</td><td class="num">33</td><td class="num">19</td><td class="num">351</td><td class="num">986</td></tr><tr><td class="">TSH</td><td class="num">1,382</td><td class="num">20</td><td class="num">32</td><td class="num">120</td><td class="num">1,210</td></tr><tr><td class="">Glucose (Fasting)</td><td class="num">1,343</td><td class="num">35</td><td class="num">13</td><td class="num">484</td><td class="num">811</td></tr><tr><td class="">Aspartate Aminotransferase</td><td class="num">1,320</td><td class="num">36</td><td class="num">1</td><td class="num">30</td><td class="num">1,253</td></tr><tr><td class="">Vitamin D+Metabolites</td><td class="num">1,266</td><td class="num">918</td><td class="num">0</td><td class="num">1</td><td class="num">347</td></tr><tr><td class="">Urea</td><td class="num">1,252</td><td class="num">30</td><td class="num">3</td><td class="num">97</td><td class="num">1,122</td></tr><tr><td class="">Calcium in Serum or Plasma</td><td class="num">1,199</td><td class="num">27</td><td class="num">3</td><td class="num">26</td><td class="num">1,143</td></tr><tr><td class="">ALANINE AMINO TRANSFERASE</td><td class="num">1,107</td><td class="num">37</td><td class="num">9</td><td class="num">288</td><td class="num">773</td></tr><tr><td class="">Uric acid in Serum or Plasma</td><td class="num">1,073</td><td class="num">29</td><td class="num">13</td><td class="num">148</td><td class="num">883</td></tr><tr><td class="">Vit-B12</td><td class="num">849</td><td class="num">513</td><td class="num">2</td><td class="num">15</td><td class="num">319</td></tr><tr><td class="">T3</td><td class="num">705</td><td class="num">15</td><td class="num">9</td><td class="num">44</td><td class="num">637</td></tr><tr><td class="">Alkaline Phosphatase ALP</td><td class="num">659</td><td class="num">16</td><td class="num">5</td><td class="num">174</td><td class="num">464</td></tr><tr><td class="">Urine Analysis</td><td class="num">370</td><td class="num">4</td><td class="num">46</td><td class="num">10</td><td class="num">310</td></tr><tr><td class="">Albumin in Serum or Plasma</td><td class="num">357</td><td class="num">13</td><td class="num">0</td><td class="num">2</td><td class="num">342</td></tr><tr><td class="">Magnesium in Serum or Plasma</td><td class="num">323</td><td class="num">10</td><td class="num">4</td><td class="num">65</td><td class="num">244</td></tr><tr><td class="">Total Bilirubin</td><td class="num">284</td><td class="num">8</td><td class="num">4</td><td class="num">44</td><td class="num">228</td></tr><tr><td class="">Potassium in Serum or Plasma</td><td class="num">275</td><td class="num">4</td><td class="num">5</td><td class="num">40</td><td class="num">226</td></tr><tr><td class="">Bilirubin.direct in Serum or Plasma</td><td class="num">264</td><td class="num">20</td><td class="num">2</td><td class="num">51</td><td class="num">191</td></tr><tr><td class="">Sodium - Serum or Plasma</td><td class="num">214</td><td class="num">4</td><td class="num">1</td><td class="num">41</td><td class="num">168</td></tr><tr><td class="">T4</td><td class="num">202</td><td class="num">4</td><td class="num">6</td><td class="num">11</td><td class="num">181</td></tr><tr><td class="">Amylase in Serum or Plasma</td><td class="num">160</td><td class="num">9</td><td class="num">2</td><td class="num">29</td><td class="num">120</td></tr><tr><td class="">Gamma Glutamyl Transferase</td><td class="num">156</td><td class="num">5</td><td class="num">2</td><td class="num">39</td><td class="num">110</td></tr><tr><td class="">Total Protein</td><td class="num">116</td><td class="num">1</td><td class="num">1</td><td class="num">14</td><td class="num">100</td></tr><tr><td class="">Hepatitis C Antibody</td><td class="num">80</td><td class="num">1</td><td class="num">0</td><td class="num">0</td><td class="num">79</td></tr><tr><td class="">Hepatitis B S Antigen</td><td class="num">76</td><td class="num">1</td><td class="num">0</td><td class="num">0</td><td class="num">75</td></tr><tr><td class="">Anti-HIV1&amp; 2 Screening</td><td class="num">64</td><td class="num">0</td><td class="num">1</td><td class="num">0</td><td class="num">63</td></tr><tr><td class="">Blood Group</td><td class="num">37</td><td class="num">0</td><td class="num">4</td><td class="num">2</td><td class="num">31</td></tr><tr><td class="">Hepatitis B Anti Surface antibody</td><td class="num">35</td><td class="num">0</td><td class="num">0</td><td class="num">0</td><td class="num">35</td></tr><tr><td class="">Chloride</td><td class="num">35</td><td class="num">0</td><td class="num">1</td><td class="num">22</td><td class="num">12</td></tr><tr><td class="">Pregnancy Test Urine</td><td class="num">27</td><td class="num">1</td><td class="num">0</td><td class="num">0</td><td class="num">26</td></tr><tr><td class="">Phosphate in Serum or Plasma</td><td class="num">25</td><td class="num">0</td><td class="num">1</td><td class="num">22</td><td class="num">2</td></tr><tr><td class="">Beta-HCG</td><td class="num">23</td><td class="num">3</td><td class="num">0</td><td class="num">11</td><td class="num">9</td></tr><tr><td class="">Hepatitis B Anti core Total</td><td class="num">21</td><td class="num">0</td><td class="num">0</td><td class="num">0</td><td class="num">21</td></tr><tr><td class="">C Reactive Protein</td><td class="num">19</td><td class="num">0</td><td class="num">0</td><td class="num">2</td><td class="num">17</td></tr><tr><td class="">MALARIA TEST</td><td class="num">18</td><td class="num">10</td><td class="num">0</td><td class="num">0</td><td class="num">8</td></tr><tr><td class="">Creatine Kinase</td><td class="num">17</td><td class="num">0</td><td class="num">0</td><td class="num">13</td><td class="num">4</td></tr><tr><td class="">Prolactin</td><td class="num">14</td><td class="num">0</td><td class="num">2</td><td class="num">8</td><td class="num">4</td></tr><tr><td class="">Rheumatoid Factor</td><td class="num">11</td><td class="num">1</td><td class="num">0</td><td class="num">0</td><td class="num">10</td></tr><tr><td class="">Follicle Stimulating Hormone [FSH] antigen</td><td class="num">7</td><td class="num">0</td><td class="num">2</td><td class="num">2</td><td class="num">3</td></tr><tr><td class="">LH</td><td class="num">6</td><td class="num">0</td><td class="num">2</td><td class="num">1</td><td class="num">3</td></tr><tr><td class="">Glucose in Serum or Plasma</td><td class="num">3</td><td class="num">0</td><td class="num">0</td><td class="num">3</td><td class="num">0</td></tr><tr><td class="">Testosterone</td><td class="num">3</td><td class="num">0</td><td class="num">0</td><td class="num">1</td><td class="num">2</td></tr><tr><td class="">Brucella</td><td class="num">2</td><td class="num">0</td><td class="num">0</td><td class="num">0</td><td class="num">2</td></tr><tr><td class="">Toxoplasma IgG</td><td class="num">2</td><td class="num">0</td><td class="num">0</td><td class="num">0</td><td class="num">2</td></tr><tr><td class="">PSA</td><td class="num">2</td><td class="num">0</td><td class="num">0</td><td class="num">1</td><td class="num">1</td></tr><tr><td class="">Progesterone</td><td class="num">1</td><td class="num">0</td><td class="num">0</td><td class="num">1</td><td class="num">0</td></tr><tr><td class="">Stool Analysis</td><td class="num">1</td><td class="num">0</td><td class="num">0</td><td class="num">0</td><td class="num">1</td></tr><tr><td class="">Stool Culture</td><td class="num">1</td><td class="num">1</td><td class="num">0</td><td class="num">0</td><td class="num">0</td></tr><tr><td class="">Toxoplasma IgM</td><td class="num">1</td><td class="num">0</td><td class="num">0</td><td class="num">0</td><td class="num">1</td></tr><tr class="total"><td class="">TOTAL</td><td class="num">28,431</td><td class="num">2,204</td><td class="num">496</td><td class="num">6,100</td><td class="num">19,631</td></tr></tbody></table></div>
+</section>
+<section id="daily">
+  <div class="sec-head">
+    <div><span class="eyebrow">03</span><h2>Daily Workload</h2>
+      <p class="use-for">Tests, samples, patients and orders per calendar day (by order date/time).</p></div>
+    <div class="copy-group">
+      <button class="copy-btn" data-target="daily" data-format="tsv">Copy for Excel</button>
+      <button class="copy-btn" data-target="daily" data-format="md">Copy as Markdown</button>
+    </div>
+  </div>
+  <div class="bars"><div class="bar"><span class="bar-l">2026-08-16</span><span class="bar-track"><span class="bar-fill" style="width:76.3%"></span></span><span class="bar-v">3,028</span></div><div class="bar"><span class="bar-l">2026-08-17</span><span class="bar-track"><span class="bar-fill" style="width:58.6%"></span></span><span class="bar-v">2,328</span></div><div class="bar"><span class="bar-l">2026-08-18</span><span class="bar-track"><span class="bar-fill" style="width:88.2%"></span></span><span class="bar-v">3,503</span></div><div class="bar"><span class="bar-l">2026-08-19</span><span class="bar-track"><span class="bar-fill" style="width:63.9%"></span></span><span class="bar-v">2,536</span></div><div class="bar"><span class="bar-l">2026-08-20</span><span class="bar-track"><span class="bar-fill" style="width:55.2%"></span></span><span class="bar-v">2,193</span></div><div class="bar"><span class="bar-l">2026-08-21</span><span class="bar-track"><span class="bar-fill" style="width:0.5%"></span></span><span class="bar-v">21</span></div><div class="bar"><span class="bar-l">2026-08-22</span><span class="bar-track"><span class="bar-fill" style="width:11.0%"></span></span><span class="bar-v">435</span></div><div class="bar"><span class="bar-l">2026-08-23</span><span class="bar-track"><span class="bar-fill" style="width:74.3%"></span></span><span class="bar-v">2,948</span></div><div class="bar"><span class="bar-l">2026-08-24</span><span class="bar-track"><span class="bar-fill" style="width:88.1%"></span></span><span class="bar-v">3,499</span></div><div class="bar"><span class="bar-l">2026-08-25</span><span class="bar-track"><span class="bar-fill" style="width:100.0%"></span></span><span class="bar-v">3,970</span></div><div class="bar"><span class="bar-l">2026-08-26</span><span class="bar-track"><span class="bar-fill" style="width:66.9%"></span></span><span class="bar-v">2,657</span></div><div class="bar"><span class="bar-l">2026-08-27</span><span class="bar-track"><span class="bar-fill" style="width:33.1%"></span></span><span class="bar-v">1,313</span></div></div><ul class="stat-list"><li><span>Average tests per day</span><b>2,369.20</b></li><li><span>Highest-volume day</span><b>2026-08-25</b></li><li><span>Lowest-volume day</span><b>2026-08-21</b></li><li><span>Maximum daily test count</span><b>3,970</b></li><li><span>Minimum daily test count</span><b>21</b></li><li><span>Number of days covered</span><b>12</b></li></ul>
+  <div class="tablewrap"><table id="daily"><thead><tr><th class="">Date</th><th class="num">Total Tests</th><th class="num">Unique Samples</th><th class="num">Unique Patients</th><th class="num">Unique Orders</th></tr></thead><tbody><tr><td class="">2026-08-16</td><td class="num">3,028</td><td class="num">928</td><td class="num">333</td><td class="num">350</td></tr><tr><td class="">2026-08-17</td><td class="num">2,328</td><td class="num">786</td><td class="num">276</td><td class="num">292</td></tr><tr><td class="">2026-08-18</td><td class="num">3,503</td><td class="num">1,127</td><td class="num">418</td><td class="num">450</td></tr><tr><td class="">2026-08-19</td><td class="num">2,536</td><td class="num">848</td><td class="num">306</td><td class="num">316</td></tr><tr><td class="">2026-08-20</td><td class="num">2,193</td><td class="num">651</td><td class="num">254</td><td class="num">259</td></tr><tr><td class="">2026-08-21</td><td class="num">21</td><td class="num">5</td><td class="num">3</td><td class="num">3</td></tr><tr><td class="">2026-08-22</td><td class="num">435</td><td class="num">109</td><td class="num">39</td><td class="num">41</td></tr><tr><td class="">2026-08-23</td><td class="num">2,948</td><td class="num">906</td><td class="num">353</td><td class="num">365</td></tr><tr><td class="">2026-08-24</td><td class="num">3,499</td><td class="num">1,067</td><td class="num">365</td><td class="num">376</td></tr><tr><td class="">2026-08-25</td><td class="num">3,970</td><td class="num">1,198</td><td class="num">429</td><td class="num">471</td></tr><tr><td class="">2026-08-26</td><td class="num">2,657</td><td class="num">809</td><td class="num">306</td><td class="num">319</td></tr><tr><td class="">2026-08-27</td><td class="num">1,313</td><td class="num">403</td><td class="num">187</td><td class="num">193</td></tr><tr class="total"><td class="">TOTAL</td><td class="num">28,431</td><td class="num">8,837</td><td class="num">3,210</td><td class="num">3,435</td></tr></tbody></table></div>
+</section>
+<section id="phc">
+  <div class="sec-head">
+    <div><span class="eyebrow">04</span><h2>PHC / Source Analysis</h2>
+      <p class="use-for">Workload by originating primary-health-care centre.</p></div>
+    <div class="copy-group">
+      <button class="copy-btn" data-target="phc" data-format="tsv">Copy for Excel</button>
+      <button class="copy-btn" data-target="phc" data-format="md">Copy as Markdown</button>
+    </div>
+  </div>
+  <p class="use-for">The export contains a single PHC code (340); cross-PHC comparison is not applicable for this file.</p>
+  <div class="tablewrap"><table id="phc"><thead><tr><th class="">PHC</th><th class="num">Total Tests</th><th class="num">Unique Samples</th><th class="num">Unique Patients</th><th class="num">Unique Orders</th><th class="num">% of Total</th></tr></thead><tbody><tr><td class="">340</td><td class="num">28,431</td><td class="num">8,837</td><td class="num">3,210</td><td class="num">3,435</td><td class="num">100</td></tr></tbody></table></div>
+</section>
+<section id="quality">
+  <div class="sec-head">
+    <div><span class="eyebrow">05</span><h2>Data Quality &amp;amp; Filter Audit</h2>
+      <p class="use-for">Every row accounted for &mdash; raw count, exclusions, duplicates, blanks.</p></div>
+    <div class="copy-group">
+      <button class="copy-btn" data-target="quality" data-format="tsv">Copy for Excel</button>
+      <button class="copy-btn" data-target="quality" data-format="md">Copy as Markdown</button>
+    </div>
+  </div>
+  <div class="chart"><h3>Notes &amp; limitations</h3><ol class='notes'><li>`Divisionname` is entirely blank in this export - no division breakdown is possible.</li><li>No internal/non-external rows were present.</li><li>No duplicate records found.</li><li>1,465 &#x27;received by receptionist only&#x27; rows excluded from the strict received count (a broader definition including them would give 29,896).</li><li>Reconciliation: 28,431 + 8,574 + 1,465 + 197 = 38,667 external rows.</li></ol></div>
+  <div class="tablewrap"><table id="quality"><thead><tr><th class="">Check</th><th class="">Value</th></tr></thead><tbody><tr><td class="">Total raw rows in file</td><td class="">38,667</td></tr><tr><td class="">Header row detected at (0-indexed)</td><td class="">4</td></tr><tr><td class="">Rows identified as external (Is external lab order = Yes)</td><td class="">38,667</td></tr><tr><td class="">Rows excluded as internal / non-external</td><td class="">0</td></tr><tr><td class="">Exact duplicate exported records removed</td><td class="">0</td></tr><tr><td class="">External rows after de-duplication</td><td class="">38,667</td></tr><tr><td class="">Rows received (Samplestatus = Received / Received = 1)</td><td class="">28,431</td></tr><tr><td class="">Rows received by receptionist only (not counted as lab-received)</td><td class="">1,465</td></tr><tr><td class="">Rows rejected (excluded)</td><td class="">197</td></tr><tr><td class="">Rows pending / not yet received (excluded)</td><td class="">8,574</td></tr><tr><td class="">FINAL: valid external Ayenati tests received</td><td class="">28,431</td></tr><tr><td class="">Blank Test descriptions (in received set)</td><td class="">0</td></tr><tr><td class="">Blank Sample barcodes (in received set)</td><td class="">0</td></tr><tr><td class="">Blank MRNs (in received set)</td><td class="">0</td></tr><tr><td class="">Blank Order no (in received set)</td><td class="">0</td></tr><tr><td class="">Distinct raw Test description spellings</td><td class="">59</td></tr><tr><td class="">Distinct cleaned/normalised Test Names (received)</td><td class="">56</td></tr><tr><td class="">Missing expected columns</td><td class="">none</td></tr></tbody></table></div>
+</section>
+
+  <footer>
+    <p>Generated by <code>scripts/ayenati_external_stats.py</code> from a de-identified export.
+      Aggregate counts only &mdash; no patient identifiers. Validation: &Sigma;&nbsp;test&nbsp;count
+      = 28,431 = total received; percentages sum to 99.99%.</p>
+  </footer>
+</div>
+<div id="toast" role="status" aria-live="polite"></div>
+<script>
+(function(){
+  function cellText(el){return el.innerText.replace(/ /g,' ').trim();}
+  function grid(table){
+    var out=[];
+    table.querySelectorAll('tr').forEach(function(tr){
+      var cells=tr.querySelectorAll('th,td');
+      if(!cells.length)return;
+      out.push(Array.prototype.map.call(cells,cellText));
+    });
+    return out;
+  }
+  function toTSV(g){return g.map(function(r){return r.join('\t');}).join('\n');}
+  function toMD(g){
+    if(!g.length)return '';
+    var head='| '+g[0].join(' | ')+' |';
+    var sep='|'+g[0].map(function(){return '---';}).join('|')+'|';
+    var body=g.slice(1).map(function(r){return '| '+r.join(' | ')+' |';}).join('\n');
+    return [head,sep,body].join('\n');
+  }
+  var toast=document.getElementById('toast'),t;
+  function flash(msg){
+    toast.textContent=msg;toast.classList.add('show');
+    clearTimeout(t);t=setTimeout(function(){toast.classList.remove('show');},1800);
+  }
+  document.querySelectorAll('.copy-btn').forEach(function(btn){
+    btn.addEventListener('click',function(){
+      var sec=document.getElementById(btn.dataset.target);
+      var table=sec&&sec.querySelector('table');
+      if(!table)return;
+      var g=grid(table);
+      var text=btn.dataset.format==='md'?toMD(g):toTSV(g);
+      var done=function(){flash(btn.dataset.format==='md'?'Markdown table copied':'Copied — paste into Excel');};
+      if(navigator.clipboard&&navigator.clipboard.writeText){
+        navigator.clipboard.writeText(text).then(done,function(){fallback(text,done);});
+      }else{fallback(text,done);}
+    });
+  });
+  function fallback(text,done){
+    var ta=document.createElement('textarea');ta.value=text;
+    ta.style.position='fixed';ta.style.opacity='0';document.body.appendChild(ta);
+    ta.select();try{document.execCommand('copy');done();}catch(e){flash('Copy failed');}
+    document.body.removeChild(ta);
+  }
+})();
+</script>
