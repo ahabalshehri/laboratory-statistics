@@ -1,8 +1,16 @@
 name: Ayenati daily report
 
-# Drop a DE-IDENTIFIED "External LAB AYANATI" export into data/incoming/ and push.
-# This workflow builds the report in every format, uploads them as a downloadable
-# artifact, commits them into reports/, and publishes reports/ to GitHub Pages.
+# Two ways in:
+#   1. Commit a DE-IDENTIFIED export to data/incoming/ and push.
+#   2. Run this workflow with a source_url (or set the AYENATI_SOURCE_URL secret):
+#      CI downloads the RAW export, de-identifies it on the runner, shreds the
+#      raw copy, then continues exactly as (1).
+# Then it builds every report format, uploads an artifact, commits reports/,
+# publishes GitHub Pages, and cuts a Release.
+#
+# SECURITY: a workflow_dispatch input is shown in the run's metadata, and this
+# repo is PUBLIC. Do NOT paste a URL that embeds a token/password as source_url
+# - use the AYENATI_SOURCE_URL repository secret for that (masked, not logged).
 
 on:
   push:
@@ -11,12 +19,18 @@ on:
       - "scripts/ayenati_external_stats.py"
       - "scripts/ayenati_report_page.py"
       - "scripts/check_no_phi.py"
+      - "scripts/fetch_export.py"
+      - "scripts/deidentify_ayenati.py"
       - "labstats/export/**"
       - ".github/workflows/ayenati-report.yml"
   workflow_dispatch:
     inputs:
+      source_url:
+        description: "URL of a raw export to download + de-identify (leave blank to use the AYENATI_SOURCE_URL secret, or to just reprocess data/incoming/)"
+        type: string
+        default: ""
       process_all:
-        description: "Process every file in data/incoming/ (not just changed ones)"
+        description: "When no URL: process every file in data/incoming/"
         type: boolean
         default: true
 
@@ -50,10 +64,40 @@ jobs:
       - name: Install dependencies
         run: pip install -r requirements-report.txt
 
+      - name: Fetch and de-identify a raw export from a URL
+        id: fetch
+        if: github.event_name == 'workflow_dispatch'
+        env:
+          SOURCE_URL: ${{ inputs.source_url != '' && inputs.source_url || secrets.AYENATI_SOURCE_URL }}
+        run: |
+          set -euo pipefail
+          if [ -z "${SOURCE_URL:-}" ]; then
+            echo "No source_url and no AYENATI_SOURCE_URL secret - nothing to fetch."
+            exit 0
+          fi
+          echo "::add-mask::${SOURCE_URL}"
+          rawdir="${RUNNER_TEMP}/ayenati_raw"
+          mkdir -p "$rawdir"
+          # delete the raw download no matter how this step ends (runner VM is ephemeral too)
+          trap 'rm -rf "$rawdir"' EXIT
+          raw="$(python scripts/fetch_export.py "${SOURCE_URL}" "$rawdir" | tail -n1)"
+          stem="$(basename "${raw%.*}")"
+          out="data/incoming/${stem}.xlsx"
+          python scripts/deidentify_ayenati.py "$raw" "$out"
+          rm -rf "$rawdir"; trap - EXIT
+          echo "Raw copy deleted. De-identified -> $out"
+          echo "deid_file=$out" >> "$GITHUB_OUTPUT"
+
       - name: Determine which exports to process
         id: pick
         run: |
           set -euo pipefail
+          if [ -n "${{ steps.fetch.outputs.deid_file }}" ]; then
+            files=( "${{ steps.fetch.outputs.deid_file }}" )
+            printf '%s\n' "${files[@]}"
+            { echo "files<<EOF"; printf '%s\n' "${files[@]}"; echo "EOF"; } >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
           all=false
           if [ "${{ github.event_name }}" = "workflow_dispatch" ] && [ "${{ inputs.process_all }}" = "true" ]; then
             all=true
@@ -106,15 +150,15 @@ jobs:
           if-no-files-found: error
           retention-days: 30
 
-      - name: Commit reports back to the repo
-        if: github.event_name == 'push'
+      - name: Commit reports (and any URL-sourced de-identified export) back
+        if: github.event_name == 'push' || steps.fetch.outputs.deid_file != ''
         run: |
           set -euo pipefail
           git config user.name  "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add reports
+          git add reports data/incoming
           if git diff --cached --quiet; then
-            echo "No report changes to commit."
+            echo "Nothing to commit."
           else
             git commit -m "Ayenati report for ${{ github.sha }} [skip ci]"
             git pull --rebase --autostash

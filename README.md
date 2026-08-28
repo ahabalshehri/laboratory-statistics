@@ -63,8 +63,22 @@ Commit only the de-identified data file. The push triggers
 (**fails the run if any file in `data/incoming/` still contains patient
 data**), rebuilds every format, uploads them as the `ayenati-reports-<run>`
 artifact (30-day retention), commits them to `reports/`, **publishes
-`reports/` to GitHub Pages**, and **cuts a GitHub Release per export**. Only
-de-identified data ever reaches GitHub.
+`reports/` to GitHub Pages**, and **cuts a GitHub Release per export**.
+
+### Or: run it from a URL (no local machine)
+
+**Actions → Ayenati daily report → Run workflow**, and give it a `source_url`.
+CI downloads the **raw** export to the runner's temp dir, de-identifies it,
+**shreds the raw copy**, runs the PHI guard, then continues as above (commits
+the de-identified `data/incoming/<stem>.xlsx` too).
+
+> ⚠️ This repo is **public**, and a `workflow_dispatch` input is recorded in
+> the run's metadata. Never paste a URL that contains a token or password as
+> `source_url`. For a tokenised or private endpoint, set it as the
+> **`AYENATI_SOURCE_URL`** repository secret instead (masked, never logged) and
+> run the workflow with `source_url` left blank.
+
+Only de-identified data is ever committed, published, or kept as an artifact.
 
 ### Where the reports are published
 
