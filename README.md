@@ -58,13 +58,14 @@ patient data**), rebuilds three outputs, uploads them as the
 `ayenati-reports-<run>` artifact (30-day retention), and commits the Markdown
 and HTML back to `reports/`. Only de-identified data ever reaches GitHub.
 
-Three report formats per run, all from the same numbers:
+Four report formats per run, all from the same numbers:
 
 | File | Use |
 |---|---|
 | `… .xlsx` | 8 sheets (Dashboard, Test Wise, Test Status, Daily, PHC, Test-by-PHC, Data Quality, Clean Data) |
 | `… .md` | Full narrative report, renders on GitHub |
 | `… .html` | **One page with every table**, each with copy-to-Excel / copy-as-Markdown buttons — open locally or publish as a Claude artifact for a shareable link |
+| `… .pdf` | **Official, signable report** — hospital logo + letterhead, confidentiality statement, executive indicators, Prepared / Reviewed / Approved block, full test-wise appendices. For sharing with administration and health authorities. Uploaded as a workflow artifact (git-ignored locally). |
 
 Report internals: `scripts/ayenati_external_stats.py` - auto-detects the
 header row, filters to `Is external lab order = Yes` + received specimens,

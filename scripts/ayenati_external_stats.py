@@ -468,12 +468,16 @@ def main() -> None:
 
     # ================= single-page HTML report =================
     sys.path.insert(0, str(Path(__file__).resolve().parent))
+    sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
     from ayenati_report_page import build_page  # noqa: E402
 
     funnel = [("Received", n_received, "received"),
               ("Pending", n_pending, "pending"),
               ("Received by receptionist only", n_reception_only, "reception"),
               ("Rejected", n_rejected, "rejected")]
+    logo_path = Path("reference_data/logo.png")
+    logo = str(logo_path) if logo_path.exists() else None
+
     html_path = Path(out).with_suffix(".html")
     html_path.write_text(build_page({
         "hospital": hosp, "source_name": Path(src).name, "period": period or "all dates",
@@ -481,8 +485,50 @@ def main() -> None:
         "daily": daily, "day_stats": day_stats,
         "phc_stats": phc_stats, "phc_note": phc_note,
         "dq_df": dq_df, "notes": notes, "funnel": funnel,
-        "verified": verified, "pct_sum": pct_sum,
+        "verified": verified, "pct_sum": pct_sum, "logo_path": logo,
     }), encoding="utf-8")
+
+    # ================= official PDF report =================
+    def _rows(df_, num_from=1):
+        cols = list(df_.columns)
+        out_rows = []
+        for _, row in df_.iterrows():
+            cells = []
+            for j, v in enumerate(row):
+                if v is None or (isinstance(v, float) and pd.isna(v)):
+                    cells.append("")
+                elif j >= num_from and isinstance(v, (int, float)) and not isinstance(v, bool):
+                    if "%" in str(cols[j]):
+                        cells.append(f"{float(v):,.2f}")
+                    elif isinstance(v, float) and abs(v - round(v)) > 1e-9:
+                        cells.append(f"{v:,.2f}")
+                    else:
+                        cells.append(f"{int(round(v)):,}")
+                else:
+                    cells.append(str(v))
+            out_rows.append(cells)
+        return out_rows
+
+    pdf_path = Path(out).with_suffix(".pdf")
+    try:
+        from labstats.export.ayenati_pdf import build_ayenati_pdf  # noqa: E402
+        pdf_bytes = build_ayenati_pdf(
+            hospital_name=hosp, period_label=period or "All available dates",
+            source_filename=Path(src).name, kpis=kpis,
+            received=n_received, pending=n_pending, reception_only=n_reception_only,
+            rejected=n_rejected, raw_rows=total_raw_rows, duplicates_removed=n_dupes,
+            verified=verified,
+            daily_rows=_rows(daily, num_from=1) if len(daily) else [],
+            day_stats=day_stats,
+            testwise_rows=_rows(tw_out, num_from=2),
+            status_rows=_rows(status_tab, num_from=1) if len(status_tab) else [],
+            data_quality_rows=dq,
+            notes=notes, pct_sum=pct_sum, logo_path=logo,
+        )
+        pdf_path.write_bytes(pdf_bytes)
+    except Exception as exc:  # reportlab missing or render error - keep the other outputs
+        pdf_path = None
+        print(f"(PDF not generated: {exc})")
 
     # ================= console summary =================
     print(f"\nWorkbook written: {out}\n")

@@ -95,6 +95,7 @@ jobs:
             reports/**/*.xlsx
             reports/**/*.md
             reports/**/*.html
+            reports/**/*.pdf
           if-no-files-found: error
           retention-days: 30
 
