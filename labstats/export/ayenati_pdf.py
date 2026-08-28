@@ -93,6 +93,34 @@ def _fmt(v) -> str:
     return str(v)
 
 
+def _long_table(headers, rows, col_widths, total_last=True):
+    """Grid table whose column header repeats on every page it spans, with the
+    final (TOTAL) row highlighted - for long tables that break across pages."""
+    data = [headers] + rows
+    t = Table(data, colWidths=col_widths, repeatRows=1)
+    last = len(data) - 1
+    style = [
+        ("BACKGROUND", (0, 0), (-1, 0), NAVY),
+        ("TEXTCOLOR", (0, 0), (-1, 0), colors.white),
+        ("FONTNAME", (0, 0), (-1, 0), "Helvetica-Bold"),
+        ("FONTSIZE", (0, 0), (-1, -1), 8.5),
+        ("GRID", (0, 0), (-1, -1), 0.5, GRID_GRAY),
+        ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
+        ("TOPPADDING", (0, 0), (-1, -1), 4.5),
+        ("BOTTOMPADDING", (0, 0), (-1, -1), 4.5),
+        ("ROWBACKGROUNDS", (0, 1), (-1, last - 1 if total_last else last),
+         [colors.white, LIGHT_BLUE]),
+    ]
+    if total_last:
+        style += [
+            ("BACKGROUND", (0, last), (-1, last), BLUE),
+            ("TEXTCOLOR", (0, last), (-1, last), colors.white),
+            ("FONTNAME", (0, last), (-1, last), "Helvetica-Bold"),
+        ]
+    t.setStyle(TableStyle(style))
+    return t
+
+
 def build_ayenati_pdf(
     *,
     hospital_name: str,
@@ -147,8 +175,7 @@ def build_ayenati_pdf(
 
     title_block = Table(
         [[Paragraph("Official External / Ayenati<br/>Laboratory Statistics Report", band_title)],
-         [Paragraph("Tests referred from primary health-care centres, received by the "
-                    "hospital laboratory", band_sub)]],
+         [Paragraph("Primary health-care centre referrals received by the laboratory", band_sub)]],
         colWidths=[8.6 * cm])
     title_block.setStyle(TableStyle([("LEFTPADDING", (0, 0), (-1, -1), 0),
                                      ("TOPPADDING", (0, 0), (-1, -1), 0),
@@ -223,18 +250,15 @@ def build_ayenati_pdf(
     story.append(Spacer(1, 12))
 
     if daily_rows:
-        daily_block = [
-            Paragraph("Daily Workload", styles["Section"]),
-            _totals_table(
-                ["Date", "Tests", "Samples", "Patients", "Orders"],
-                daily_rows, col_widths=[4.6 * cm, 2.9 * cm, 2.9 * cm, 2.9 * cm, 2.9 * cm]),
-        ]
+        story.append(Paragraph("Daily Workload", styles["Section"]))
+        story.append(_long_table(
+            ["Date", "Tests", "Samples", "Patients", "Orders"],
+            daily_rows, col_widths=[4.6 * cm, 2.9 * cm, 2.9 * cm, 2.9 * cm, 2.9 * cm]))
         if day_stats:
-            daily_block.append(Spacer(1, 5))
+            story.append(Spacer(1, 5))
             bits = "&nbsp;&nbsp;|&nbsp;&nbsp;".join(
                 f"<b>{k}:</b> {_fmt(v)}" for k, v in day_stats.items())
-            daily_block.append(Paragraph(bits, styles["Small"]))
-        story.append(KeepTogether(daily_block))
+            story.append(Paragraph(bits, styles["Small"]))
         story.append(Spacer(1, 12))
 
     story.append(Paragraph("Data Quality and Validation", styles["Section"]))
@@ -262,7 +286,7 @@ def build_ayenati_pdf(
         "All received external / Ayenati tests, by cleaned Test description, highest volume first. "
         "% of Total = test count &divide; total tests received &times; 100.", styles["Small"]))
     story.append(Spacer(1, 8))
-    story.append(_totals_table(
+    story.append(_long_table(
         ["Rank", "Test Name", "Count", "% Total", "Samples", "Patients"],
         testwise_rows,
         col_widths=[1.3 * cm, 7.0 * cm, 2.1 * cm, 2.0 * cm, 2.2 * cm, 2.2 * cm]))
@@ -278,7 +302,7 @@ def build_ayenati_pdf(
         ncol = len(status_rows[0])
         first = 6.0 * cm
         rest = (16.6 * cm - first) / (ncol - 1)
-        story.append(_totals_table(
+        story.append(_long_table(
             ["Test Name", "Total", "Ordered", "Resulted", "Ver. L1", "Ver. L2"][:ncol],
             status_rows, col_widths=[first] + [rest] * (ncol - 1)))
 

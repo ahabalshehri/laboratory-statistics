@@ -22,5 +22,8 @@ data/generated/*
 output/
 reports_out/
 *.pdf
+# Official Ayenati PDF reports are aggregate-only (no PHI) - keep them in the
+# repo so they have a stable download URL. The large source workbook stays out.
+!reports/**/*.pdf
 
 .streamlit/secrets.toml

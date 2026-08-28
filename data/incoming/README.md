@@ -5,9 +5,10 @@ and push. The `Ayenati daily report` GitHub Actions workflow
 (`.github/workflows/ayenati-report.yml`) picks up any `*.xlsx` added or changed
 in this folder, runs `scripts/ayenati_external_stats.py`, and:
 
-1. attaches the Excel workbook + Markdown + single-page HTML report as a
-   downloadable **workflow artifact**, and
-2. commits the Markdown and HTML reports to `reports/<file-stem>/`.
+1. attaches the Excel workbook + Markdown + single-page HTML + official PDF
+   report as a downloadable **workflow artifact**, and
+2. commits the Markdown, HTML and PDF reports to `reports/<file-stem>/`
+   (see [reports/README.md](../../reports/README.md) for how to download).
 
 ## Before you push — de-identify
 

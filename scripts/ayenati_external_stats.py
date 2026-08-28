@@ -530,6 +530,29 @@ def main() -> None:
         pdf_path = None
         print(f"(PDF not generated: {exc})")
 
+    # ================= refresh reports/INDEX.md =================
+    reports_root = out.parent.parent
+    current_folder = out.parent.name
+    if reports_root.name == "reports":
+        lines = ["# Report index", "",
+                 "Auto-generated. Each row links the committed formats of one processed export.",
+                 "The Excel workbook is not committed here - download it from the workflow artifact",
+                 "(repo -> Actions -> Ayenati daily report -> latest run -> Artifacts).", "",
+                 "| Report | PDF | Markdown | HTML |", "|---|---|---|---|"]
+
+        def _idx_link(folder, ext):
+            match = next(folder.glob(f"*{ext}"), None)
+            if not match:
+                return "-"
+            rel = f"{folder.name}/{match.name}".replace(" ", "%20")
+            return f"[{ext[1:].upper()}]({rel})"
+
+        for folder in sorted((p for p in reports_root.iterdir() if p.is_dir()), reverse=True):
+            mark = " (latest)" if folder.name == current_folder else ""
+            lines.append(f"| {folder.name}{mark} | {_idx_link(folder, '.pdf')} | "
+                         f"{_idx_link(folder, '.md')} | {_idx_link(folder, '.html')} |")
+        (reports_root / "INDEX.md").write_text("\n".join(lines) + "\n", encoding="utf-8")
+
     # ================= console summary =================
     print(f"\nWorkbook written: {out}\n")
     print("=== SUMMARY ===")

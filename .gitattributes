@@ -1,0 +1,9 @@
+# Treat binary report/asset formats as binary - never apply text/EOL filters
+# (important: the committed PDF reports must not be line-ending "normalized").
+*.pdf  binary
+*.xlsx binary
+*.xls  binary
+*.png  binary
+*.jpg  binary
+*.jpeg binary
+*.ico  binary
