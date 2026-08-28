@@ -15,6 +15,9 @@ data/generated/*
 !data/sample_synthetic/*.csv
 # The bundled Test Master List has no patient data - safe to commit and ship with the app.
 !reference_data/*.xlsx
+# De-identified daily exports for the report workflow. A pre-commit / CI guard
+# (scripts/check_no_phi.py) blocks any file here that still contains PHI.
+!data/incoming/*.xlsx
 
 output/
 reports_out/

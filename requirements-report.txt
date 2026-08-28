@@ -1,0 +1,4 @@
+# Minimal deps for the Ayenati report workflow (no Streamlit/Plotly/ReportLab).
+pandas==3.0.5
+openpyxl==3.1.5
+xlsxwriter==3.2.9

@@ -27,6 +27,43 @@ Upload your Laboratory Test Master List and Laboratory Activity File
 (both `.xlsx`), or check "Use local sample files in data/raw/" if you've
 placed files there for local testing (see **Data privacy** below).
 
+## Ayenati / External-lab daily report (GitHub Actions)
+
+Separate from the Streamlit app: a test-wise statistics report for the
+**"External LAB AYANATI"** LIS export (PHC-referred workload). One raw export
+becomes an Excel workbook + Markdown report, published as a GitHub Actions
+artifact and committed under `reports/`.
+
+**Local, per day:**
+
+```
+# raw export stays in data/raw/ (git-ignored, contains PHI)
+python scripts/run_daily.py "data/raw/External LAB AYANATI 16-27-aug-2026.xlsx"
+```
+
+`run_daily.py` de-identifies (`scripts/deidentify_ayenati.py` - MRN/ID
+pseudonymised, patient names replaced, staff name stripped), runs the PHI
+guard (`scripts/check_no_phi.py`), and builds the report into `reports/<stem>/`.
+Then:
+
+```
+git add "data/incoming/<stem>.xlsx" "reports/<stem>"/*.md
+git commit -m "Ayenati export <dates>"
+git push
+```
+
+The push triggers `.github/workflows/ayenati-report.yml`, which re-runs the
+PHI guard (**fails the run if any file in `data/incoming/` still contains
+patient data**), rebuilds the workbook + Markdown, uploads them as the
+`ayenati-reports-<run>` artifact (30-day retention), and commits the Markdown
+back to `reports/`. Only de-identified data ever reaches GitHub.
+
+Report internals: `scripts/ayenati_external_stats.py` - auto-detects the
+header row, filters to `Is external lab order = Yes` + received specimens,
+counts tests test-wise by cleaned `Test description`, and emits Dashboard /
+Test Wise / Test Status / Daily / PHC / Test-by-PHC / Data Quality / Clean
+Data sheets.
+
 ## Running tests
 
 ```
