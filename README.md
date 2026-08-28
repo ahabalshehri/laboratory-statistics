@@ -27,12 +27,24 @@ Upload your Laboratory Test Master List and Laboratory Activity File
 (both `.xlsx`), or check "Use local sample files in data/raw/" if you've
 placed files there for local testing (see **Data privacy** below).
 
-## Ayenati / External-lab daily report (GitHub Actions)
+## Ayenati / External-lab report
 
-Separate from the Streamlit app: a test-wise statistics report for the
-**"External LAB AYANATI"** LIS export (PHC-referred workload). One raw export
-becomes an Excel workbook + Markdown report, published as a GitHub Actions
-artifact and committed under `reports/`.
+A test-wise statistics report for the **"External LAB AYANATI"** LIS export
+(PHC-referred workload). One raw export becomes an Excel workbook + Markdown +
+interactive HTML + official PDF. Three ways to run it:
+
+### A. Upload button (local app)
+
+```
+streamlit run app.py            # then pick "Ayenati External Report" in the sidebar
+```
+
+Drop the raw export onto the uploader (or paste a link). It is de-identified
+on your machine, checked, analysed, and every format is offered as a download
+button - plus the dashboard and the full report embedded on the page. Nothing
+leaves the machine.
+
+### B / C. Command line and GitHub Actions
 
 **Local, per day** - pass a local file *or a link* (the raw export stays in
 `data/raw/`, which is git-ignored and holds PHI):

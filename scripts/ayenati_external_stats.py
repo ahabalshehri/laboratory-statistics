@@ -49,13 +49,19 @@ def canonical_map(names: pd.Series) -> dict:
     return out
 
 
-def main() -> None:
-    src = sys.argv[1] if len(sys.argv) > 1 else \
-        r"C:/Users/ahmed/Downloads/External LAB AYANATI 16-27-aug-2026.xlsx"
+def generate(src, out=None, *, quiet: bool = False) -> dict:
+    """Run the full analysis for one export and write every report format.
+
+    src : path to the (de-identified) export .xlsx
+    out : target .xlsx path, or a directory (the report files are named after
+          the source), or None to write next to the source.
+    Returns a dict of output Paths plus the key figures, for callers such as
+    the Streamlit upload page.
+    """
     src = str(Path(src))
     default_out = Path(src).with_name(Path(src).stem + " - Ayenati Test-Wise Statistics.xlsx")
-    out = Path(sys.argv[2]) if len(sys.argv) > 2 else default_out
-    if out.suffix.lower() != ".xlsx":            # argv[2] given as a directory
+    out = Path(out) if out else default_out
+    if out.suffix.lower() != ".xlsx":            # a directory was given
         out = out / (Path(src).stem + " - Ayenati Test-Wise Statistics.xlsx")
     out.parent.mkdir(parents=True, exist_ok=True)
 
@@ -560,6 +566,16 @@ def main() -> None:
         (reports_root / "index.html").write_text(
             build_index(reports_root, hosp, logo), encoding="utf-8")
 
+    result = {
+        "xlsx": out, "md": md_path, "html": html_path,
+        "pdf": pdf_path if pdf_path else None,
+        "kpis": kpis, "testwise": tw_out, "status": status_tab, "daily": daily,
+        "phc": phc_stats, "data_quality": dq_df, "notes": notes,
+        "period": period, "hospital": hosp, "pct_sum": pct_sum,
+    }
+    if quiet:
+        return result
+
     # ================= console summary =================
     print(f"\nWorkbook written: {out}\n")
     print("=== SUMMARY ===")
@@ -580,6 +596,13 @@ def main() -> None:
     if phc_note:
         print(f"   - {phc_note}")
     print(f"   - Validation: sum(Test Count) = {int(tw['Test Count'].sum()):,} == Total ({total_tests:,}); percentages sum to {pct_sum:.2f}%.")
+    return result
+
+
+def main() -> None:
+    src = sys.argv[1] if len(sys.argv) > 1 else \
+        r"C:/Users/ahmed/Downloads/External LAB AYANATI 16-27-aug-2026.xlsx"
+    generate(src, sys.argv[2] if len(sys.argv) > 2 else None)
 
 
 if __name__ == "__main__":
