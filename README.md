@@ -33,16 +33,20 @@ A test-wise statistics report for the **"External LAB AYANATI"** LIS export
 (PHC-referred workload). One raw export becomes an Excel workbook + Markdown +
 interactive HTML + official PDF. Three ways to run it:
 
-### A. Upload button (local app)
+### A. Upload button (app)
 
 ```
 streamlit run app.py            # then pick "Ayenati External Report" in the sidebar
 ```
 
-Drop the raw export onto the uploader (or paste a link). It is de-identified
-on your machine, checked, analysed, and every format is offered as a download
-button - plus the dashboard and the full report embedded on the page. Nothing
-leaves the machine.
+Drop the raw export onto the uploader (or paste a link). It is de-identified,
+checked, analysed, and every format is offered as a download button - plus the
+dashboard and the full report embedded on the page.
+
+Run locally (nothing leaves the machine), or **host it** on Streamlit
+Community Cloud for a shareable URL with a password gate - see
+[DEPLOY.md](DEPLOY.md). Set an `app_password` secret to turn on the login
+prompt and force server-side de-identification.
 
 ### B / C. Command line and GitHub Actions
 

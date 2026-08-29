@@ -27,10 +27,12 @@ from labstats.reports.patients_received_summary import (
     build_division_month_matrix,
     build_patients_received_summary,
 )
+from labstats.appauth import require_password
 from labstats.stats.analytical_units import compute_analytical_units
 from labstats.stats.engine import CountingConfig, compute_core_counts
 
 st.set_page_config(page_title="Laboratory Statistics & Reporting System", layout="wide")
+require_password()
 
 
 def _save_upload(uploaded_file) -> str:

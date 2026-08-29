@@ -1,0 +1,12 @@
+# Streamlit configuration (used locally and on Streamlit Community Cloud).
+
+[server]
+maxUploadSize = 50          # MB - LIS exports are a few MB
+enableXsrfProtection = true
+
+[browser]
+gatherUsageStats = false
+
+[theme]
+base = "light"
+primaryColor = "#0d6d88"

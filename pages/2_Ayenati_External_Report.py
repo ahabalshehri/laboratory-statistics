@@ -17,14 +17,25 @@ from ayenati_external_stats import generate  # noqa: E402
 from check_no_phi import check_file  # noqa: E402
 from deidentify_ayenati import deidentify  # noqa: E402
 from fetch_export import resolve_input  # noqa: E402
+from labstats.appauth import is_hosted, require_password  # noqa: E402
 
 st.set_page_config(page_title="Ayenati External Lab Report", layout="wide")
+require_password()
+HOSTED = is_hosted()
+
 st.title("External / Ayenati Laboratory Report")
 st.caption(
-    "Upload the raw LIS export (or paste a link). It is de-identified on this "
-    "machine first - MRNs pseudonymised, patient names and IDs removed - then "
-    "the test-wise statistics report is generated in every format."
+    "Upload the raw LIS export (or paste a link). It is de-identified first - "
+    "MRNs pseudonymised, patient names and IDs removed - then the test-wise "
+    "statistics report is generated in every format."
 )
+if HOSTED:
+    st.warning(
+        "Shared deployment: files are de-identified **on the server** before "
+        "analysis, and the raw upload is discarded. Prefer uploading a file "
+        "that is already de-identified.",
+        icon="🔒",
+    )
 
 tab_file, tab_url = st.tabs(["Upload a file", "From a link"])
 src_path = None
@@ -42,7 +53,9 @@ with tab_url:
         except Exception as exc:  # noqa: BLE001
             st.error(f"Could not fetch: {exc}")
 
-deidentify_first = st.checkbox("De-identify before analysing (recommended)", value=True)
+deidentify_first = True
+if not HOSTED:
+    deidentify_first = st.checkbox("De-identify before analysing (recommended)", value=True)
 
 if src_path is None:
     st.info("Upload a file or fetch a link to begin.")
